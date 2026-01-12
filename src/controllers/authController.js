@@ -38,3 +38,17 @@ export const getMe = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updatePreferences = async (req, res, next) => {
+  try {
+    const { theme } = req.body;
+    const user = await authService.updateUserPreferences(req.user.id, { theme });
+
+    res.status(200).json({
+      success: true,
+      data: { user },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

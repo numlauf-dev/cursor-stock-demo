@@ -4,13 +4,33 @@ import logger from '../utils/logger.js';
 let redisClient = null;
 
 export const connectRedis = async () => {
+  // Skip Redis in development if REDIS_URL is not set
+  if (!process.env.REDIS_URL && process.env.NODE_ENV !== 'production') {
+    logger.warn('Redis URL not configured, continuing without cache');
+    return null;
+  }
+
   try {
     redisClient = createClient({
       url: process.env.REDIS_URL || 'redis://localhost:6379',
+      socket: {
+        connectTimeout: 5000, // 5 second timeout
+        reconnectStrategy: (retries) => {
+          if (retries > 3) {
+            logger.warn('Max Redis reconnection attempts reached, continuing without cache');
+            return false; // Stop reconnecting
+          }
+          return Math.min(retries * 100, 1000);
+        }
+      }
     });
 
     redisClient.on('error', (err) => {
-      logger.error('Redis Client Error:', err);
+      // Only log once, not repeatedly
+      if (!redisClient._errorLogged) {
+        logger.warn('Redis unavailable, continuing without cache');
+        redisClient._errorLogged = true;
+      }
     });
 
     redisClient.on('connect', () => {
@@ -20,12 +40,8 @@ export const connectRedis = async () => {
     await redisClient.connect();
     return redisClient;
   } catch (error) {
-    logger.error('Failed to connect to Redis:', error);
-    // Continue without Redis in development, but log warning
-    if (process.env.NODE_ENV === 'production') {
-      throw error;
-    }
-    logger.warn('Continuing without Redis cache');
+    logger.warn('Failed to connect to Redis, continuing without cache');
+    redisClient = null;
     return null;
   }
 };
@@ -36,7 +52,11 @@ export const getRedisClient = () => {
 
 export const disconnectRedis = async () => {
   if (redisClient) {
-    await redisClient.quit();
+    try {
+      await redisClient.quit();
+    } catch (e) {
+      // Ignore disconnect errors
+    }
     redisClient = null;
   }
 };

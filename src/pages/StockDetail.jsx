@@ -3,7 +3,6 @@ import { useStockQuote, useStockProfile } from '../hooks/useStockData'
 import { useWatchlist } from '../context/WatchlistContext'
 import PriceDisplay from '../components/atoms/PriceDisplay'
 import Button from '../components/atoms/Button'
-import StockChart from '../components/organisms/StockChart'
 import TradingPanel from '../components/organisms/TradingPanel'
 
 const StockDetail = () => {
@@ -81,14 +80,9 @@ const StockDetail = () => {
         </div>
       </div>
 
-      {/* Chart and Trading Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <StockChart symbol={upperSymbol} />
-        </div>
-        <div>
-          <TradingPanel symbol={upperSymbol} currentPrice={quote.currentPrice} />
-        </div>
+      {/* Trading Panel */}
+      <div className="max-w-md">
+        <TradingPanel symbol={upperSymbol} currentPrice={quote.currentPrice} />
       </div>
     </div>
   )

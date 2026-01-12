@@ -6,19 +6,19 @@ const StockCard = ({ symbol, quote, onRemove }) => {
 
   if (!quote) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 animate-pulse">
-        <div className="h-6 bg-gray-700 rounded w-20 mb-2"></div>
-        <div className="h-8 bg-gray-700 rounded w-32"></div>
+      <div className="bg-card-02 border border-card-04 rounded-lg p-4 animate-pulse">
+        <div className="h-6 bg-card-03 rounded w-20 mb-2"></div>
+        <div className="h-8 bg-card-03 rounded w-32"></div>
       </div>
     )
   }
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors group">
+    <div className="bg-card-02 border border-card-04 rounded-lg p-4 hover:border-card-04/80 transition-colors group">
       <div className="flex justify-between items-start mb-2">
         <button
           onClick={() => navigate(`/stock/${symbol}`)}
-          className="font-bold text-lg text-blue-400 hover:text-blue-300"
+          className="font-bold text-lg text-accent hover:opacity-80"
         >
           {symbol}
         </button>
@@ -28,7 +28,7 @@ const StockCard = ({ symbol, quote, onRemove }) => {
               e.stopPropagation()
               onRemove(symbol)
             }}
-            className="text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="text-fg/40 hover:text-loss opacity-0 group-hover:opacity-100 transition-opacity"
           >
             ✕
           </button>

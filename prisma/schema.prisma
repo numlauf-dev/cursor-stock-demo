@@ -16,6 +16,7 @@ model User {
   password  String
   firstName String?
   lastName  String?
+  theme     String    @default("system")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   watchlists Watchlist[]

@@ -99,6 +99,9 @@ const portfolioReducer = (state, action) => {
     }
 
     case 'RESET_PORTFOLIO':
+      // #region agent log
+      fetch('http://127.0.0.1:7245/ingest/3119f75d-315d-4eec-9fd7-249551556ccd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PortfolioContext.jsx:101',message:'RESET_PORTFOLIO reducer executing',data:{beforeState:{cash:state.cash,holdingsCount:state.holdings.length,transactionsCount:state.transactions.length},initialState:{cash:initialState.cash,holdingsCount:initialState.holdings.length,transactionsCount:initialState.transactions.length}},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       return initialState
 
     default:
@@ -112,6 +115,9 @@ export const PortfolioProvider = ({ children }) => {
   // Load portfolio from localStorage on mount
   useEffect(() => {
     const savedPortfolio = storage.getPortfolio()
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/3119f75d-315d-4eec-9fd7-249551556ccd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PortfolioContext.jsx:113',message:'load effect running',data:{savedPortfolio,hasData:!!savedPortfolio},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     if (savedPortfolio) {
       dispatch({ type: 'LOAD_PORTFOLIO', payload: savedPortfolio })
     }
@@ -119,7 +125,14 @@ export const PortfolioProvider = ({ children }) => {
 
   // Save portfolio to localStorage whenever it changes
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/3119f75d-315d-4eec-9fd7-249551556ccd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PortfolioContext.jsx:121',message:'save effect running',data:{state:{cash:state.cash,holdingsCount:state.holdings.length,transactionsCount:state.transactions.length},localStorageBefore:storage.getPortfolio()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     storage.savePortfolio(state)
+    // #region agent log
+    const afterSave = storage.getPortfolio()
+    fetch('http://127.0.0.1:7245/ingest/3119f75d-315d-4eec-9fd7-249551556ccd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PortfolioContext.jsx:123',message:'save effect completed',data:{localStorageAfter:afterSave},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
   }, [state])
 
   const buyStock = (symbol, quantity, price) => {
@@ -141,7 +154,13 @@ export const PortfolioProvider = ({ children }) => {
   }
 
   const resetPortfolio = () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/3119f75d-315d-4eec-9fd7-249551556ccd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PortfolioContext.jsx:143',message:'resetPortfolio called',data:{currentState:{cash:state.cash,holdingsCount:state.holdings.length,transactionsCount:state.transactions.length}},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     dispatch({ type: 'RESET_PORTFOLIO' })
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/3119f75d-315d-4eec-9fd7-249551556ccd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PortfolioContext.jsx:145',message:'RESET_PORTFOLIO dispatched',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
   }
 
   const getHolding = (symbol) => {

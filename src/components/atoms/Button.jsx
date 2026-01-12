@@ -26,7 +26,12 @@ const Button = ({
   return (
     <button
       type={type}
-      onClick={onClick}
+      onClick={(e) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/3119f75d-315d-4eec-9fd7-249551556ccd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Button.jsx:29',message:'Button onClick fired',data:{hasOnClick:!!onClick,disabled},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+        if (onClick) onClick(e)
+      }}
       disabled={disabled}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
     >

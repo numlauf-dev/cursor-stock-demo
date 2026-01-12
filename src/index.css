@@ -7,19 +7,30 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0f172a;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Dark mode colors (default and only theme) */
+  --bg: #14120b;
+  --fg: #edecec;
+  --accent: #f54e00;
+  --card: #1b1913;
+  --card-01: #1d1b15;
+  --card-02: #201e18;
+  --card-03: #26241e;
+  --card-04: #2b2923;
+
+  color: var(--fg);
+  background-color: var(--bg);
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  background-color: var(--bg);
+  color: var(--fg);
 }
 
 * {
@@ -33,16 +44,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1f2937;
+  background: var(--card-02);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: var(--card-04);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+  background: var(--accent);
 }
 
 /* Loading spinner */

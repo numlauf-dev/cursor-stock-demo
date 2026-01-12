@@ -25,12 +25,14 @@ export const registerUser = async (email, password, firstName, lastName) => {
       password: hashedPassword,
       firstName,
       lastName,
+      theme: 'system',
     },
     select: {
       id: true,
       email: true,
       firstName: true,
       lastName: true,
+      theme: true,
       createdAt: true,
     },
   });
@@ -69,6 +71,33 @@ export const loginUser = async (email, password) => {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      theme: user.theme,
     },
   };
+};
+
+export const updateUserPreferences = async (userId, preferences) => {
+  const { theme } = preferences;
+
+  // Validate theme value
+  if (theme && !['light', 'dark', 'system'].includes(theme)) {
+    throw new ValidationError('Theme must be one of: light, dark, system');
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(theme && { theme }),
+    },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      theme: true,
+      updatedAt: true,
+    },
+  });
+
+  return updatedUser;
 };

@@ -26,29 +26,29 @@ const PortfolioSummary = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-        <div className="text-gray-400 text-sm mb-2">Total Value</div>
-        <div className="text-white text-3xl font-bold">
+      <div className="bg-card-02 border border-card-04 rounded-lg p-6">
+        <div className="text-fg/60 text-sm mb-2">Total Value</div>
+        <div className="text-fg text-3xl font-bold">
           {formatCurrency(totalValue)}
         </div>
       </div>
 
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-        <div className="text-gray-400 text-sm mb-2">Portfolio Value</div>
-        <div className="text-white text-3xl font-bold">
+      <div className="bg-card-02 border border-card-04 rounded-lg p-6">
+        <div className="text-fg/60 text-sm mb-2">Portfolio Value</div>
+        <div className="text-fg text-3xl font-bold">
           {formatCurrency(portfolioValue)}
         </div>
       </div>
 
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-        <div className="text-gray-400 text-sm mb-2">Cash Balance</div>
-        <div className="text-white text-3xl font-bold">
+      <div className="bg-card-02 border border-card-04 rounded-lg p-6">
+        <div className="text-fg/60 text-sm mb-2">Cash Balance</div>
+        <div className="text-fg text-3xl font-bold">
           {formatCurrency(cash)}
         </div>
       </div>
 
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-        <div className="text-gray-400 text-sm mb-2">Total P&L</div>
+      <div className="bg-card-02 border border-card-04 rounded-lg p-6">
+        <div className="text-fg/60 text-sm mb-2">Total P&L</div>
         <div className={`text-3xl font-bold ${isPositive ? 'text-gain' : 'text-loss'}`}>
           {formatCurrency(totalPnL)}
         </div>

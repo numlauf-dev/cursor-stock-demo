@@ -27,6 +27,7 @@ export const authenticate = async (req, res, next) => {
           email: true,
           firstName: true,
           lastName: true,
+          theme: true,
         },
       });
 

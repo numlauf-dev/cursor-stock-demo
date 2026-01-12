@@ -7,11 +7,11 @@ const Sidebar = () => {
   const { quotes } = useMultipleQuotes(watchlist)
 
   return (
-    <div className="w-80 bg-gray-900 border-r border-gray-700 p-4 overflow-y-auto">
-      <h2 className="text-xl font-semibold text-white mb-4">Watchlist</h2>
+    <div className="w-80 bg-card border-r border-card-04 p-4 overflow-y-auto">
+      <h2 className="text-xl font-semibold text-fg mb-4">Watchlist</h2>
       
       {watchlist.length === 0 ? (
-        <div className="text-center text-gray-400 py-8">
+        <div className="text-center text-fg/60 py-8">
           <p className="text-sm">No stocks in watchlist</p>
           <p className="text-xs mt-2">Add stocks to track prices</p>
         </div>

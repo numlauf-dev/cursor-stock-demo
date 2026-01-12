@@ -17,8 +17,8 @@ const HoldingsTable = () => {
 
   if (holdings.length === 0) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-8">
-        <div className="text-center text-gray-400">
+      <div className="bg-card-02 border border-card-04 rounded-lg p-8">
+        <div className="text-center text-fg/60">
           <p className="text-xl mb-2">No holdings yet</p>
           <p className="text-sm">Search for stocks to start trading</p>
         </div>
@@ -27,35 +27,35 @@ const HoldingsTable = () => {
   }
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+    <div className="bg-card-02 border border-card-04 rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-900">
+          <thead className="bg-card-03">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-medium text-fg/60 uppercase tracking-wider">
                 Symbol
               </th>
-              <th className="px-6 py-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-4 text-right text-xs font-medium text-fg/60 uppercase tracking-wider">
                 Quantity
               </th>
-              <th className="px-6 py-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-4 text-right text-xs font-medium text-fg/60 uppercase tracking-wider">
                 Avg Price
               </th>
-              <th className="px-6 py-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-4 text-right text-xs font-medium text-fg/60 uppercase tracking-wider">
                 Current Price
               </th>
-              <th className="px-6 py-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-4 text-right text-xs font-medium text-fg/60 uppercase tracking-wider">
                 Market Value
               </th>
-              <th className="px-6 py-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-4 text-right text-xs font-medium text-fg/60 uppercase tracking-wider">
                 P&L
               </th>
-              <th className="px-6 py-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-4 text-right text-xs font-medium text-fg/60 uppercase tracking-wider">
                 P&L %
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-700">
+          <tbody className="divide-y divide-card-04">
             {holdings.map((holding) => {
               const quote = quotes[holding.symbol]
               const currentPrice = quote?.currentPrice || holding.avgPrice
@@ -68,27 +68,27 @@ const HoldingsTable = () => {
                 <tr 
                   key={holding.symbol}
                   onClick={() => navigate(`/stock/${holding.symbol}`)}
-                  className="hover:bg-gray-700 cursor-pointer transition-colors"
+                  className="hover:bg-card-03 cursor-pointer transition-colors"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-blue-400">
+                    <div className="text-sm font-semibold text-accent">
                       {holding.symbol}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-fg">
                     {formatNumber(holding.quantity)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-fg">
                     {formatCurrency(holding.avgPrice)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-fg">
                     {loading ? (
-                      <div className="h-4 w-16 bg-gray-600 rounded animate-pulse ml-auto"></div>
+                      <div className="h-4 w-16 bg-card-03 rounded animate-pulse ml-auto"></div>
                     ) : (
                       formatCurrency(currentPrice)
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-white">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-fg">
                     {formatCurrency(marketValue)}
                   </td>
                   <td className={`px-6 py-4 whitespace-nowrap text-right text-sm font-semibold ${isPositive ? 'text-gain' : 'text-loss'}`}>

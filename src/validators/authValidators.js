@@ -23,3 +23,10 @@ export const loginValidator = [
     .notEmpty()
     .withMessage('Password is required'),
 ];
+
+export const preferencesValidator = [
+  body('theme')
+    .optional()
+    .isIn(['light', 'dark', 'system'])
+    .withMessage('Theme must be one of: light, dark, system'),
+];
