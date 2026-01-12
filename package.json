@@ -7,13 +7,17 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "node server.js",
-    "server:dev": "nodemon server.js",
+    "server": "node backend/server.js",
+    "server:dev": "nodemon backend/server.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "lint": "eslint frontend/ backend/ --ext .js,.jsx",
+    "lint:fix": "eslint frontend/ backend/ --ext .js,.jsx --fix",
+    "review": "npm run lint && npm run test",
+    "check": "npm run lint && npm run test && npm run build"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",
@@ -28,11 +32,12 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "openai": "^6.9.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.0",
-    "redis": "^4.6.0",
     "recharts": "^2.12.0",
+    "redis": "^4.6.0",
     "winston": "^3.11.0"
   },
   "devDependencies": {

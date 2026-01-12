@@ -1,0 +1,11 @@
+# Cursor Rules for Stock Trading Demo
+
+## Rule 1: Always format currency values consistently
+When displaying monetary values (prices, totals, P&L), always use the formatCurrency utility from src/utils/calculations.js. This ensures all currency displays show exactly 2 decimal places and use USD formatting ($X,XXX.XX).
+
+## Rule 2: Validate API endpoints follow REST conventions
+When creating or modifying API endpoints, ensure they follow RESTful conventions:
+- Use appropriate HTTP methods (GET for reads, POST for creates, PUT/PATCH for updates, DELETE for deletes)
+- Return proper HTTP status codes (200 for success, 201 for created, 400 for bad requests, 404 for not found, 500 for server errors)
+- Include error handling with meaningful error messages
+- Use consistent URL patterns (/api/v1/resource for collections, /api/v1/resource/:id for specific resources)

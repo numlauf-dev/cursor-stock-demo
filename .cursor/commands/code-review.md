@@ -48,4 +48,3 @@ Provide specific, actionable feedback with:
 - **Explanation** of potential impact
 
 Focus on maintainability, security, performance, and adherence to project rules.
-

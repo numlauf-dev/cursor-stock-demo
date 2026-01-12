@@ -7,8 +7,8 @@ export default {
   },
   testMatch: ['**/tests/**/*.test.js'],
   collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/**/*.test.js',
+    'backend/**/*.js',
+    '!backend/**/*.test.js',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
