@@ -15,6 +15,7 @@ Store the count of command files to verify later. These files must survive the r
 - `code-review.md`
 - `create-implementation-checklist.md`
 - `do-ticket.md`
+- `inject-debug-bug.md`
 - `reset-demo.md`
 - `start-demo.md`
 - `validate-implementation.md`
@@ -65,7 +66,7 @@ Store the count of command files to verify later. These files must survive the r
    ```
 
 8. **Verify commands folder is intact**:
-   - List contents of `.cursor/commands/` and confirm all 6 command files still exist
+   - List contents of `.cursor/commands/` and confirm all 7 command files still exist
    - If any are missing, STOP and alert the user immediately
 
 ## Important Notes
@@ -78,7 +79,7 @@ Store the count of command files to verify later. These files must survive the r
 ## Verification
 
 After running, verify:
-- [ ] `.cursor/commands/` has all 6 command files (list them to confirm)
+- [ ] `.cursor/commands/` has all 7 command files (list them to confirm)
 - [ ] `.cursor/plans/` is empty (no .plan.md files)
 - [ ] No theme toggle visible in UI
 - [ ] StockDetail page shows price summary without chart
@@ -92,7 +93,7 @@ Run `/start-demo` to create a fresh demo branch and start the dev servers.
 ## Output
 
 Provide a summary of:
-- Confirmation that all 6 commands still exist in `.cursor/commands/`
+- Confirmation that all 7 commands still exist in `.cursor/commands/`
 - Number of plan files deleted
 - Components modified
 - Features removed
