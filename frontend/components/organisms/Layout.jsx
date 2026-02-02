@@ -41,6 +41,14 @@ const Layout = ({ children }) => {
           {children}
         </main>
       </div>
+      
+      {/* Footer */}
+      <footer className="bg-gray-800 border-t border-gray-700 py-4 px-6">
+        <div className="flex items-center justify-between text-sm text-gray-400">
+          <span>Stock Trading Demo</span>
+          <span>Market data is simulated for demonstration purposes</span>
+        </div>
+      </footer>
     </div>
   )
 }
