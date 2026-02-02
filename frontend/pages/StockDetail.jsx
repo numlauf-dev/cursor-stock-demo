@@ -4,6 +4,7 @@ import { useWatchlist } from '../context/WatchlistContext'
 import PriceDisplay from '../components/atoms/PriceDisplay'
 import Button from '../components/atoms/Button'
 import TradingPanel from '../components/organisms/TradingPanel'
+import StockChart from '../components/organisms/StockChart'
 
 const StockDetail = () => {
   const { symbol } = useParams()
@@ -85,37 +86,10 @@ const StockDetail = () => {
         </div>
       </div>
 
-      {/* Price Summary and Trading Panel */}
+      {/* Stock Chart and Trading Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-white mb-6">Price Summary</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Current Price</span>
-                <span className="text-white font-semibold text-lg">${quote.currentPrice.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Previous Close</span>
-                <span className="text-white">${quote.previousClose.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Day's Range</span>
-                <span className="text-white">${quote.low.toFixed(2)} - ${quote.high.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Change</span>
-                <span className={`font-semibold ${quote.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {quote.change >= 0 ? '+' : ''}{quote.change.toFixed(2)} ({quote.changePercent >= 0 ? '+' : ''}{quote.changePercent.toFixed(2)}%)
-                </span>
-              </div>
-            </div>
-            <div className="mt-6 pt-6 border-t border-gray-700">
-              <p className="text-sm text-gray-500">
-                Historical price charts require a premium API subscription. Current price data is available above.
-              </p>
-            </div>
-          </div>
+          <StockChart symbol={upperSymbol} />
         </div>
         <div>
           <TradingPanel symbol={upperSymbol} currentPrice={quote.currentPrice} />

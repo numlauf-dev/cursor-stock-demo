@@ -89,29 +89,34 @@ export const useStockCandles = (symbol, resolution = 'D', days = 30) => {
   const [candles, setCandles] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  useEffect(() => {
+  const fetchCandles = useCallback(async () => {
     if (!symbol) return
 
-    const fetchCandles = async () => {
-      try {
-        setError(null)
-        setLoading(true)
-        const to = Math.floor(Date.now() / 1000)
-        const from = to - (days * 24 * 60 * 60)
-        const data = await stockApi.getCandles(symbol, resolution, from, to)
-        setCandles(data)
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
+    try {
+      setError(null)
+      setLoading(true)
+      const to = Math.floor(Date.now() / 1000)
+      const from = to - (days * 24 * 60 * 60)
+      const data = await stockApi.getCandles(symbol, resolution, from, to)
+      setCandles(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
-
-    fetchCandles()
   }, [symbol, resolution, days])
 
-  return { candles, loading, error }
+  useEffect(() => {
+    fetchCandles()
+  }, [fetchCandles, refreshKey])
+
+  const refresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1)
+  }, [])
+
+  return { candles, loading, error, refresh }
 }
 
 export const useMultipleQuotes = (symbols, refreshInterval = 5000) => {

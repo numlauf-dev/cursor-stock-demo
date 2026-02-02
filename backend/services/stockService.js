@@ -209,7 +209,9 @@ export const getStockHistory = async (symbol, period = '1m') => {
       '1w': 'TIME_SERIES_DAILY',
       '1m': 'TIME_SERIES_DAILY',
       '3m': 'TIME_SERIES_DAILY',
+      '6m': 'TIME_SERIES_DAILY',
       '1y': 'TIME_SERIES_DAILY',
+      'all': 'TIME_SERIES_DAILY',
     };
 
     const functionName = functionMap[period] || 'TIME_SERIES_DAILY';
@@ -221,7 +223,7 @@ export const getStockHistory = async (symbol, period = '1m') => {
       logger.info('Using mock data for stock history');
       const dates = [];
       const now = new Date();
-      const days = period === '1d' ? 1 : period === '1w' ? 7 : period === '1m' ? 30 : period === '3m' ? 90 : 365;
+      const days = period === '1d' ? 1 : period === '1w' ? 7 : period === '1m' ? 30 : period === '3m' ? 90 : period === '6m' ? 180 : period === 'all' ? 730 : 365;
 
       for (let i = 0; i < days; i++) {
         const date = new Date(now);
@@ -246,7 +248,7 @@ export const getStockHistory = async (symbol, period = '1m') => {
         function: functionName,
         symbol: symbol.toUpperCase(),
         ...(functionName === 'TIME_SERIES_INTRADAY' && { interval: '60min' }),
-        outputsize: period === '1y' ? 'full' : 'compact',
+        outputsize: (period === '1y' || period === 'all' || period === '6m') ? 'full' : 'compact',
       });
     }
 
