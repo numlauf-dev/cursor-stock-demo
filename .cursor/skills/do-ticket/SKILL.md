@@ -1,3 +1,8 @@
+---
+name: do-ticket
+description: Pull the full Jira/Linear ticket description for the referenced ticket and begin working on it
+disable-model-invocation: true
+---
 # Do Ticket
 
 Pull the full Jira/Linear ticket description for the referenced ticket and begin working on it.
@@ -29,4 +34,3 @@ Examples:
 - `/do-ticket LIN-123`
 - `/do-ticket STOCK-45`
 - `/do-ticket https://linear.app/team/issue/LIN-123`
-

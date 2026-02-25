@@ -1,3 +1,8 @@
+---
+name: create-implementation-checklist
+description: Analyze a Linear/Jira ticket and generate a structured implementation checklist suitable for plan mode
+disable-model-invocation: true
+---
 # Create Implementation Checklist
 
 Analyze a Linear/Jira ticket and generate a structured implementation checklist suitable for plan mode.
@@ -104,4 +109,3 @@ Analyze a Linear/Jira ticket and generate a structured implementation checklist 
 Examples:
 - `/create-implementation-checklist LIN-123`
 - `/create-implementation-checklist STOCK-45`
-

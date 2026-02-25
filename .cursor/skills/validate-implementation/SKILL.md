@@ -1,3 +1,8 @@
+---
+name: validate-implementation
+description: Review the implementation to ensure it matches requirements and project standards
+disable-model-invocation: true
+---
 # Validate Implementation
 
 Review the implementation to ensure it matches the requirements and follows project standards.

@@ -2,23 +2,19 @@
 
 Reset the repository to a clean demo state by removing implemented features (dark/light mode, stock charts) and clearing plan files.
 
-## ⚠️ CRITICAL: Protect Commands Folder
+## ⚠️ CRITICAL: Protect Commands and Skills Folders
 
-**NEVER delete, modify, or overwrite files in `.cursor/commands/`**
+**NEVER delete, modify, or overwrite files in `.cursor/commands/` or `.cursor/skills/`**
 
 Before making ANY changes, verify the commands folder exists and list its contents:
 ```bash
 ls -la .cursor/commands/
 ```
 
-Store the count of command files to verify later. These files must survive the reset:
-- `code-review.md`
-- `create-implementation-checklist.md`
-- `do-ticket.md`
+Store the count of command files to verify later. These command files must survive the reset (skills live in .cursor/skills/ and are never touched):
 - `inject-debug-bug.md`
 - `reset-demo.md`
 - `start-demo.md`
-- `validate-implementation.md`
 
 ## Task
 
@@ -65,13 +61,14 @@ Store the count of command files to verify later. These files must survive the r
    lsof -ti:3000,3001,3002,3003,3004,3005,3006,3007,3008,3009 | xargs kill -9 2>/dev/null || true
    ```
 
-8. **Verify commands folder is intact**:
-   - List contents of `.cursor/commands/` and confirm all 7 command files still exist
-   - If any are missing, STOP and alert the user immediately
+8. **Verify commands and skills folders are intact**:
+   - List contents of `.cursor/commands/` and confirm all 3 command files still exist
+   - If `.cursor/skills/` exists, confirm it was not modified or deleted
+   - If any commands are missing, STOP and alert the user immediately
 
 ## Important Notes
 
-- **🚫 NEVER delete `.cursor/commands/`** - this folder contains these instructions!
+- **🚫 NEVER delete `.cursor/commands/` or `.cursor/skills/`** - commands contain these instructions; skills contain migrated workflows
 - **Preserve component files**: Do NOT delete `StockChart.jsx` or `MiniSparkline.jsx` - these will be added during demo
 - **Preserve backend**: Do not modify backend endpoints - they should remain functional
 - **Git status**: After changes, do NOT commit automatically - leave changes for review
@@ -79,7 +76,8 @@ Store the count of command files to verify later. These files must survive the r
 ## Verification
 
 After running, verify:
-- [ ] `.cursor/commands/` has all 7 command files (list them to confirm)
+- [ ] `.cursor/commands/` has all 3 command files (list them to confirm)
+- [ ] `.cursor/skills/` intact if it exists (never modified)
 - [ ] `.cursor/plans/` is empty (no .plan.md files)
 - [ ] No theme toggle visible in UI
 - [ ] StockDetail page shows price summary without chart
@@ -93,7 +91,7 @@ Run `/start-demo` to create a fresh demo branch and start the dev servers.
 ## Output
 
 Provide a summary of:
-- Confirmation that all 7 commands still exist in `.cursor/commands/`
+- Confirmation that all 3 commands still exist in `.cursor/commands/`
 - Number of plan files deleted
 - Components modified
 - Features removed

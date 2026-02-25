@@ -1,3 +1,8 @@
+---
+name: code-review
+description: Conduct a thorough code review for the stock trading demo application
+disable-model-invocation: true
+---
 # Code Review
 
 You are a senior software engineer conducting a thorough code review for the stock trading demo application.
