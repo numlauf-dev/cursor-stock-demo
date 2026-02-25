@@ -2,6 +2,15 @@
 
 Prepare a clean demo environment by creating a new demo-run branch and starting the application.
 
+## ⚠️ CRITICAL: Protect Skills Folder
+
+**NEVER delete, modify, or overwrite files in `.cursor/skills/`**
+
+When stashing uncommitted changes, exclude `.cursor/skills/` so skills are preserved:
+```bash
+git stash push -m "startdemo: stashing changes" -- . ':!.cursor/skills/'
+```
+
 ## Task
 
 0. **Optional Pre-flight Checks** (can be skipped for quick start):
@@ -10,7 +19,7 @@ Prepare a clean demo environment by creating a new demo-run branch and starting 
    - Database: If using Prisma, ensure migrations are up to date: `npm run db:migrate` (optional, can skip if demo doesn't need DB)
 
 1. **Ensure we're up to date with origin main**:
-   - If there are uncommitted changes, stash them first: `git stash push -m "startdemo: stashing changes"`
+   - If there are uncommitted changes, stash them first (excluding .cursor/skills/): `git stash push -m "startdemo: stashing changes" -- . ':!.cursor/skills/'`
    - If currently on a different branch, switch to main: `git checkout main`
    - Fetch latest from origin: `git fetch origin` (continue even if this fails - might be offline)
    - Pull latest changes: `git pull origin main` (continue even if this fails - might be offline or already up to date)
@@ -40,7 +49,7 @@ Prepare a clean demo environment by creating a new demo-run branch and starting 
 ```
 # Current branch: feature-xyz with uncommitted changes
 
-$ git stash push -m "startdemo: stashing changes"
+$ git stash push -m "startdemo: stashing changes" -- . ':!.cursor/skills/'
 $ git checkout main
 $ git fetch origin
 $ git pull origin main
