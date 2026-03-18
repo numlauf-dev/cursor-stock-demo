@@ -18,6 +18,6 @@ export const getStockHistoryValidator = [
     .withMessage('Invalid stock symbol format'),
   query('period')
     .optional()
-    .isIn(['1d', '1w', '1m', '3m', '1y'])
-    .withMessage('Period must be one of: 1d, 1w, 1m, 3m, 1y'),
+    .isIn(['1d', '1w', '1m', '3m', '6m', '1y', 'all'])
+    .withMessage('Period must be one of: 1d, 1w, 1m, 3m, 6m, 1y, all'),
 ];

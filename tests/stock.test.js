@@ -83,6 +83,26 @@ describe('Stock API', () => {
       expect(response.body.data).toHaveProperty('history');
     });
 
+    it('should return history with valid period query param (6m)', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/AAPL/history')
+        .query({ period: '6m' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('history');
+    });
+
+    it('should return history with valid period query param (all)', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/AAPL/history')
+        .query({ period: 'all' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('history');
+    });
+
     it('should reject invalid symbol format with special characters', async () => {
       const response = await request(app)
         .get('/api/v1/stocks/AAPL@/history');

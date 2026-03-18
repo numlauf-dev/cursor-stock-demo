@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useStockCandles } from '../../hooks/useStockData'
 import Button from '../atoms/Button'
@@ -8,30 +8,40 @@ const timeRanges = [
   { label: '1W', days: 7 },
   { label: '1M', days: 30 },
   { label: '3M', days: 90 },
+  { label: '6M', days: 180 },
   { label: '1Y', days: 365 },
+  { label: 'ALL', days: 730 },
 ]
 
-const StockChart = ({ symbol }) => {
-  const [selectedRange, setSelectedRange] = useState(30)
-  const { candles, loading } = useStockCandles(symbol, 'D', selectedRange)
+const StockChart = ({ symbol, initialRange = 30, height = 400 }) => {
+  const [selectedRange, setSelectedRange] = useState(initialRange)
+  const { candles, loading, error, refresh } = useStockCandles(symbol, 'D', selectedRange)
+
+  // Reset selected range when initialRange prop changes
+  useEffect(() => {
+    setSelectedRange(initialRange)
+  }, [initialRange])
 
   if (loading) {
     return (
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-700 rounded w-32 mb-4"></div>
-          <div className="h-96 bg-gray-700 rounded"></div>
+          <div style={{ height: `${height}px` }} className="bg-gray-700 rounded"></div>
         </div>
       </div>
     )
   }
 
-  if (!candles || !candles.timestamps || candles.timestamps.length === 0) {
+  if (error || !candles || !candles.timestamps || candles.timestamps.length === 0) {
     return (
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
         <h2 className="text-xl font-semibold text-white mb-4">Price Chart</h2>
-        <div className="h-96 flex items-center justify-center text-gray-400">
-          No chart data available
+        <div style={{ height: `${height}px` }} className="flex flex-col items-center justify-center text-gray-400">
+          <p className="mb-4">{error || 'No chart data available'}</p>
+          <Button onClick={refresh} variant="primary">
+            Retry
+          </Button>
         </div>
       </div>
     )
@@ -69,7 +79,7 @@ const StockChart = ({ symbol }) => {
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={400}>
+      <ResponsiveContainer width="100%" height={height}>
         <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis 
