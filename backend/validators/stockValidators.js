@@ -14,7 +14,7 @@ export const getStockHistoryValidator = [
     .trim()
     .notEmpty()
     .withMessage('Stock symbol is required')
-    .matches(/^[A-Z0-9.]+$/)
+    .matches(/^[A-Za-z0-9.]+$/)
     .withMessage('Invalid stock symbol format'),
   query('period')
     .optional()
