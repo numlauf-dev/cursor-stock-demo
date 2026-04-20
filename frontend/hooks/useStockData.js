@@ -59,6 +59,39 @@ export const useStockProfile = (symbol) => {
   return { profile, loading, error }
 }
 
+export const useStockNews = (symbol, limit = 5) => {
+  const [news, setNews] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!symbol) {
+      setNews([])
+      setLoading(false)
+      setError(null)
+      return
+    }
+
+    const fetchNews = async () => {
+      try {
+        setError(null)
+        setLoading(true)
+        const data = await stockApi.getNews(symbol, limit)
+        setNews(Array.isArray(data) ? data : [])
+      } catch (err) {
+        setError(err.message)
+        setNews([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchNews()
+  }, [symbol, limit])
+
+  return { news, loading, error }
+}
+
 export const useStockSearch = () => {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)

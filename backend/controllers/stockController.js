@@ -57,6 +57,21 @@ export const getStockHistory = async (req, res, next) => {
   }
 };
 
+export const getStockNews = async (req, res, next) => {
+  try {
+    const { symbol } = req.params;
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : 5;
+    const news = await stockService.getStockNews(symbol, limit);
+
+    res.status(200).json({
+      success: true,
+      data: { news },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getTrendingStocks = async (req, res, next) => {
   try {
     const stocks = await stockService.getTrendingStocks();

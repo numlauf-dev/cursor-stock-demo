@@ -3,6 +3,7 @@
 
 const API_KEY = import.meta.env.VITE_FINNHUB_API_KEY || 'demo'
 const BASE_URL = 'https://finnhub.io/api/v1';
+const BACKEND_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
 // Cache to reduce API calls
 const cache = new Map()
@@ -90,6 +91,31 @@ export const stockApi = {
         shareOutstanding: 0,
         exchange: 'NASDAQ'
       }
+    }
+  },
+
+  // Get stock news from backend API
+  async getNews(symbol, limit = 5) {
+    const cacheKey = `news_${symbol}_${limit}`
+    const cached = getCached(cacheKey)
+    if (cached) return cached
+
+    try {
+      const response = await fetch(
+        `${BACKEND_BASE_URL}/stocks/${encodeURIComponent(symbol)}/news?limit=${limit}`
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch stock news')
+      }
+
+      const result = await response.json()
+      const news = result?.data?.news || []
+      setCache(cacheKey, news)
+      return news
+    } catch (error) {
+      console.error('Error fetching stock news:', error)
+      throw error
     }
   },
 

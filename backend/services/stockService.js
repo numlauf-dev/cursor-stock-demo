@@ -1,16 +1,18 @@
 import axios from 'axios';
 import { getRedisClient } from '../config/redis.js';
 import logger from '../utils/logger.js';
-import { NotFoundError } from '../utils/errors.js';
+import { AppError, NotFoundError } from '../utils/errors.js';
 
 const STOCK_API_PROVIDER = process.env.STOCK_API_PROVIDER || 'alphavantage';
 const STOCK_API_KEY = process.env.STOCK_API_KEY;
+const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
 
 // Cache TTLs (in seconds)
 const CACHE_TTL = {
   QUOTE: 300, // 5 minutes
   SEARCH: 3600, // 1 hour
   HISTORY: 86400, // 24 hours
+  NEWS: 900, // 15 minutes
 };
 
 const getCacheKey = (type, symbol) => `stock:${type}:${symbol}`;
@@ -56,6 +58,82 @@ const getMockStockData = (symbol) => ({
     '10. change percent': '1.67%',
   },
 });
+
+const getStockNewsProvider = () => process.env.STOCK_NEWS_PROVIDER || 'mock';
+
+const getStockNewsApiKey = () => process.env.FINNHUB_API_KEY || process.env.VITE_FINNHUB_API_KEY;
+
+const getMockStockNews = (symbol) => {
+  const normalized = symbol.toUpperCase();
+  const now = Date.now();
+
+  return [
+    {
+      id: `${normalized}-${Math.floor(now / 1000)}-0`,
+      headline: `${normalized} extends gains as investors react to latest guidance`,
+      url: `https://example.com/news/${normalized.toLowerCase()}-guidance`,
+      source: 'Demo Wire',
+      publishedAt: new Date(now - 60 * 60 * 1000).toISOString(),
+      summary: `${normalized} shares traded higher after management reiterated near-term outlook.`,
+      image: null,
+    },
+    {
+      id: `${normalized}-${Math.floor((now - 3 * 60 * 60 * 1000) / 1000)}-1`,
+      headline: `Analysts weigh in on ${normalized} valuation ahead of earnings`,
+      url: `https://example.com/news/${normalized.toLowerCase()}-analyst-view`,
+      source: 'Market Desk',
+      publishedAt: new Date(now - 3 * 60 * 60 * 1000).toISOString(),
+      summary: 'Coverage remains mixed as investors watch margin and growth trends.',
+      image: null,
+    },
+    {
+      id: `${normalized}-${Math.floor((now - 8 * 60 * 60 * 1000) / 1000)}-2`,
+      headline: `${normalized} announces product update focused on enterprise customers`,
+      url: `https://example.com/news/${normalized.toLowerCase()}-product-update`,
+      source: 'Exchange Post',
+      publishedAt: new Date(now - 8 * 60 * 60 * 1000).toISOString(),
+      summary: 'The announcement highlights incremental roadmap improvements for key segments.',
+      image: null,
+    },
+    {
+      id: `${normalized}-${Math.floor((now - 18 * 60 * 60 * 1000) / 1000)}-3`,
+      headline: `${normalized} sector peers edge lower in mixed trading session`,
+      url: `https://example.com/news/${normalized.toLowerCase()}-sector-update`,
+      source: 'Street Snapshot',
+      publishedAt: new Date(now - 18 * 60 * 60 * 1000).toISOString(),
+      summary: 'Broader sector performance was mixed after macroeconomic data releases.',
+      image: null,
+    },
+    {
+      id: `${normalized}-${Math.floor((now - 27 * 60 * 60 * 1000) / 1000)}-4`,
+      headline: `What to watch for ${normalized} in the next trading week`,
+      url: `https://example.com/news/${normalized.toLowerCase()}-week-ahead`,
+      source: 'Investor Daily',
+      publishedAt: new Date(now - 27 * 60 * 60 * 1000).toISOString(),
+      summary: 'Traders are focused on volume trends, macro signals, and upcoming catalysts.',
+      image: null,
+    },
+  ];
+};
+
+const normalizeNewsArticles = (symbol, articles, limit) => {
+  return articles.slice(0, limit).map((article, index) => {
+    const publishedEpochSeconds = Number(article.datetime || article.publishedAt || 0);
+    const publishedAt = Number.isFinite(publishedEpochSeconds) && publishedEpochSeconds > 0
+      ? new Date(publishedEpochSeconds * 1000).toISOString()
+      : new Date().toISOString();
+
+    return {
+      id: article.id || `${symbol}-${Math.floor(new Date(publishedAt).getTime() / 1000)}-${index}`,
+      headline: article.headline || 'Untitled article',
+      url: article.url || '',
+      source: article.source || 'Unknown source',
+      publishedAt,
+      summary: article.summary || '',
+      image: article.image || null,
+    };
+  });
+};
 
 export const searchStocks = async (query) => {
   const cacheKey = getCacheKey('search', query.toLowerCase());
@@ -280,6 +358,76 @@ export const getStockHistory = async (symbol, period = '1m') => {
       throw error;
     }
     throw new NotFoundError(`Failed to get historical data for symbol: ${symbol}`);
+  }
+};
+
+export const getStockNews = async (symbol, limit = 5) => {
+  const normalizedSymbol = symbol.toUpperCase();
+  const parsedLimit = Number(limit) || 5;
+  const cacheKey = getCacheKey('news', `${normalizedSymbol}:${parsedLimit}`);
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (error) {
+      logger.warn('Redis cache read error:', error);
+    }
+  }
+
+  try {
+    let news = [];
+    const provider = getStockNewsProvider();
+
+    if (provider === 'mock') {
+      news = getMockStockNews(normalizedSymbol).slice(0, parsedLimit);
+    } else if (provider === 'finnhub') {
+      const apiKey = getStockNewsApiKey();
+      if (!apiKey || apiKey === 'demo') {
+        throw new AppError('Stock news provider is not configured', 500);
+      }
+
+      const today = new Date();
+      const fromDate = new Date(today);
+      fromDate.setDate(fromDate.getDate() - 7);
+
+      const response = await axios.get(`${FINNHUB_BASE_URL}/company-news`, {
+        params: {
+          symbol: normalizedSymbol,
+          from: fromDate.toISOString().split('T')[0],
+          to: today.toISOString().split('T')[0],
+          token: apiKey,
+        },
+        timeout: 10000,
+      });
+
+      if (!Array.isArray(response.data)) {
+        throw new AppError('Unexpected stock news provider response', 500);
+      }
+
+      news = normalizeNewsArticles(normalizedSymbol, response.data, parsedLimit);
+    } else {
+      throw new AppError(`Unsupported stock news provider: ${provider}`, 500);
+    }
+
+    if (redis) {
+      try {
+        await redis.setEx(cacheKey, CACHE_TTL.NEWS, JSON.stringify(news));
+      } catch (error) {
+        logger.warn('Redis cache write error:', error);
+      }
+    }
+
+    return news;
+  } catch (error) {
+    logger.error(`Get stock news error for ${normalizedSymbol}:`, error);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError('Failed to fetch stock news', 500);
   }
 };
 
