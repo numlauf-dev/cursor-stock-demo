@@ -10,11 +10,37 @@ const StockDetail = () => {
   const { symbol } = useParams()
   const { quote, loading: quoteLoading } = useStockQuote(symbol?.toUpperCase())
   const { profile, loading: profileLoading } = useStockProfile(symbol?.toUpperCase())
-  const { news, loading: newsLoading, error: newsError } = useStockNews(symbol?.toUpperCase(), 5)
+  const {
+    news,
+    loading: newsLoading,
+    loadingMore: newsLoadingMore,
+    error: newsError,
+    loadMoreError: newsLoadMoreError,
+    hasMore: newsHasMore,
+    loadMore: loadMoreNews,
+  } = useStockNews(symbol?.toUpperCase(), 5)
   const { isInWatchlist, toggleWatchlist, isReady: watchlistReady, loading: watchlistLoading } = useWatchlist()
 
   const upperSymbol = symbol?.toUpperCase()
   const inWatchlist = isInWatchlist(upperSymbol)
+
+  const getSentimentChipClasses = (sentiment) => {
+    if (sentiment === 'positive') {
+      return 'bg-green-500/20 text-green-300 border border-green-500/30'
+    }
+
+    if (sentiment === 'negative') {
+      return 'bg-red-500/20 text-red-300 border border-red-500/30'
+    }
+
+    return 'bg-gray-600/30 text-gray-300 border border-gray-500/40'
+  }
+
+  const getSentimentLabel = (sentiment) => {
+    if (sentiment === 'positive') return 'Positive'
+    if (sentiment === 'negative') return 'Negative'
+    return 'Neutral'
+  }
 
   const formatPublishedTime = (publishedAt) => {
     const timestamp = new Date(publishedAt)
@@ -159,12 +185,33 @@ const StockDetail = () => {
                     rel="noreferrer"
                     className="block border border-gray-700 hover:border-gray-500 rounded-lg p-4 transition-colors"
                   >
-                    <h3 className="text-sm font-semibold text-white mb-2">{article.headline}</h3>
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <h3 className="text-sm font-semibold text-white">{article.headline}</h3>
+                      <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${getSentimentChipClasses(article.sentiment)}`}>
+                        {getSentimentLabel(article.sentiment)}
+                      </span>
+                    </div>
                     <div className="text-xs text-gray-400">
                       {article.source} · {formatPublishedTime(article.publishedAt)}
                     </div>
                   </a>
                 ))}
+
+                {newsLoadMoreError && (
+                  <div className="text-sm text-red-400">
+                    Could not load more news. Please try again.
+                  </div>
+                )}
+
+                {newsHasMore && (
+                  <Button
+                    variant="outline"
+                    onClick={loadMoreNews}
+                    disabled={newsLoadingMore}
+                  >
+                    {newsLoadingMore ? 'Loading more...' : 'Load more'}
+                  </Button>
+                )}
               </div>
             )}
           </div>

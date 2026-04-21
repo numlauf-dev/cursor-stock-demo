@@ -95,14 +95,20 @@ export const stockApi = {
   },
 
   // Get stock news from backend API
-  async getNews(symbol, limit = 5) {
-    const cacheKey = `news_${symbol}_${limit}`
+  async getNews(symbol, limit = 5, cursor = null) {
+    const cursorKey = cursor === null ? 'first' : String(cursor)
+    const cacheKey = `news_${symbol}_${limit}_${cursorKey}`
     const cached = getCached(cacheKey)
     if (cached) return cached
 
     try {
+      const query = new URLSearchParams({ limit: String(limit) })
+      if (cursor !== null && cursor !== undefined) {
+        query.set('cursor', String(cursor))
+      }
+
       const response = await fetch(
-        `${BACKEND_BASE_URL}/stocks/${encodeURIComponent(symbol)}/news?limit=${limit}`
+        `${BACKEND_BASE_URL}/stocks/${encodeURIComponent(symbol)}/news?${query.toString()}`
       )
 
       if (!response.ok) {
@@ -110,9 +116,13 @@ export const stockApi = {
       }
 
       const result = await response.json()
-      const news = result?.data?.news || []
-      setCache(cacheKey, news)
-      return news
+      const payload = {
+        news: result?.data?.news || [],
+        nextCursor: result?.data?.nextCursor ?? null,
+        hasMore: Boolean(result?.data?.hasMore),
+      }
+      setCache(cacheKey, payload)
+      return payload
     } catch (error) {
       console.error('Error fetching stock news:', error)
       throw error

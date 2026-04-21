@@ -6,6 +6,7 @@ import { AppError, NotFoundError } from '../utils/errors.js';
 const STOCK_API_PROVIDER = process.env.STOCK_API_PROVIDER || 'alphavantage';
 const STOCK_API_KEY = process.env.STOCK_API_KEY;
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
+const DEFAULT_NEWS_LIMIT = 5;
 
 // Cache TTLs (in seconds)
 const CACHE_TTL = {
@@ -14,6 +15,39 @@ const CACHE_TTL = {
   HISTORY: 86400, // 24 hours
   NEWS: 900, // 15 minutes
 };
+
+const POSITIVE_SENTIMENT_KEYWORDS = [
+  'up',
+  'gain',
+  'gains',
+  'rise',
+  'rises',
+  'surge',
+  'beat',
+  'beats',
+  'strong',
+  'growth',
+  'profit',
+  'bullish',
+  'upgrade',
+];
+
+const NEGATIVE_SENTIMENT_KEYWORDS = [
+  'down',
+  'drop',
+  'drops',
+  'fall',
+  'falls',
+  'decline',
+  'declines',
+  'miss',
+  'misses',
+  'weak',
+  'loss',
+  'bearish',
+  'downgrade',
+  'warning',
+];
 
 const getCacheKey = (type, symbol) => `stock:${type}:${symbol}`;
 
@@ -66,58 +100,115 @@ const getStockNewsApiKey = () => process.env.FINNHUB_API_KEY || process.env.VITE
 const getMockStockNews = (symbol) => {
   const normalized = symbol.toUpperCase();
   const now = Date.now();
-
-  return [
+  const mockNewsRows = [
     {
-      id: `${normalized}-${Math.floor(now / 1000)}-0`,
-      headline: `${normalized} extends gains as investors react to latest guidance`,
-      url: `https://example.com/news/${normalized.toLowerCase()}-guidance`,
+      slug: 'guidance',
       source: 'Demo Wire',
-      publishedAt: new Date(now - 60 * 60 * 1000).toISOString(),
+      hoursAgo: 1,
+      headline: `${normalized} extends gains as investors react to latest guidance`,
       summary: `${normalized} shares traded higher after management reiterated near-term outlook.`,
-      image: null,
     },
     {
-      id: `${normalized}-${Math.floor((now - 3 * 60 * 60 * 1000) / 1000)}-1`,
-      headline: `Analysts weigh in on ${normalized} valuation ahead of earnings`,
-      url: `https://example.com/news/${normalized.toLowerCase()}-analyst-view`,
+      slug: 'analyst-view',
       source: 'Market Desk',
-      publishedAt: new Date(now - 3 * 60 * 60 * 1000).toISOString(),
-      summary: 'Coverage remains mixed as investors watch margin and growth trends.',
-      image: null,
+      hoursAgo: 3,
+      headline: `Analysts raise targets after ${normalized} posts strong growth outlook`,
+      summary: `Several desks upgraded ${normalized} while pointing to improving revenue quality.`,
     },
     {
-      id: `${normalized}-${Math.floor((now - 8 * 60 * 60 * 1000) / 1000)}-2`,
-      headline: `${normalized} announces product update focused on enterprise customers`,
-      url: `https://example.com/news/${normalized.toLowerCase()}-product-update`,
+      slug: 'hiring-plan',
       source: 'Exchange Post',
-      publishedAt: new Date(now - 8 * 60 * 60 * 1000).toISOString(),
-      summary: 'The announcement highlights incremental roadmap improvements for key segments.',
-      image: null,
+      hoursAgo: 6,
+      headline: `${normalized} hiring plan signals steady expansion`,
+      summary: `Management said hiring remains measured, leaving guidance largely neutral.`,
     },
     {
-      id: `${normalized}-${Math.floor((now - 18 * 60 * 60 * 1000) / 1000)}-3`,
-      headline: `${normalized} sector peers edge lower in mixed trading session`,
-      url: `https://example.com/news/${normalized.toLowerCase()}-sector-update`,
+      slug: 'margin-warning',
       source: 'Street Snapshot',
-      publishedAt: new Date(now - 18 * 60 * 60 * 1000).toISOString(),
-      summary: 'Broader sector performance was mixed after macroeconomic data releases.',
-      image: null,
+      hoursAgo: 10,
+      headline: `${normalized} slips after supplier warning on margin pressure`,
+      summary: `The update increased concern that costs could rise faster than expected this quarter.`,
     },
     {
-      id: `${normalized}-${Math.floor((now - 27 * 60 * 60 * 1000) / 1000)}-4`,
-      headline: `What to watch for ${normalized} in the next trading week`,
-      url: `https://example.com/news/${normalized.toLowerCase()}-week-ahead`,
+      slug: 'product-update',
       source: 'Investor Daily',
-      publishedAt: new Date(now - 27 * 60 * 60 * 1000).toISOString(),
+      hoursAgo: 14,
+      headline: `${normalized} announces product update focused on enterprise customers`,
+      summary: 'The announcement highlights incremental roadmap improvements for key segments.',
+    },
+    {
+      slug: 'downgrade-note',
+      source: 'Market Observer',
+      hoursAgo: 18,
+      headline: `${normalized} faces downgrade as demand outlook weakens`,
+      summary: `One analyst cut estimates, citing a possible decline in near-term order strength.`,
+    },
+    {
+      slug: 'sector-rebound',
+      source: 'Ticker Journal',
+      hoursAgo: 22,
+      headline: `${normalized} joins sector rebound in late trading`,
+      summary: 'Peer names rose after a broad market rally and better-than-expected macro data.',
+    },
+    {
+      slug: 'week-ahead',
+      source: 'Morning Bell',
+      hoursAgo: 27,
+      headline: `What to watch for ${normalized} in the next trading week`,
       summary: 'Traders are focused on volume trends, macro signals, and upcoming catalysts.',
-      image: null,
+    },
+    {
+      slug: 'profit-take',
+      source: 'Closing Tape',
+      hoursAgo: 32,
+      headline: `${normalized} edges down as traders take profit`,
+      summary: 'Selling pressure appeared after a recent run-up, but volume stayed near average.',
     },
   ];
+
+  return mockNewsRows.map((row, index) => {
+    const publishedAt = new Date(now - row.hoursAgo * 60 * 60 * 1000).toISOString();
+    return {
+      id: `${normalized}-${Math.floor(new Date(publishedAt).getTime() / 1000)}-${index}`,
+      headline: row.headline,
+      url: `https://example.com/news/${normalized.toLowerCase()}-${row.slug}`,
+      source: row.source,
+      publishedAt,
+      summary: row.summary,
+      image: null,
+    };
+  });
 };
 
-const normalizeNewsArticles = (symbol, articles, limit) => {
-  return articles.slice(0, limit).map((article, index) => {
+const classifyNewsSentiment = (headline = '', summary = '') => {
+  const text = `${headline} ${summary}`.toLowerCase();
+  let sentimentScore = 0;
+
+  POSITIVE_SENTIMENT_KEYWORDS.forEach((keyword) => {
+    if (text.includes(keyword)) {
+      sentimentScore += 1;
+    }
+  });
+
+  NEGATIVE_SENTIMENT_KEYWORDS.forEach((keyword) => {
+    if (text.includes(keyword)) {
+      sentimentScore -= 1;
+    }
+  });
+
+  if (sentimentScore > 0) {
+    return 'positive';
+  }
+
+  if (sentimentScore < 0) {
+    return 'negative';
+  }
+
+  return 'neutral';
+};
+
+const normalizeNewsArticles = (symbol, articles) => {
+  return articles.map((article, index) => {
     const publishedEpochSeconds = Number(article.datetime || article.publishedAt || 0);
     const publishedAt = Number.isFinite(publishedEpochSeconds) && publishedEpochSeconds > 0
       ? new Date(publishedEpochSeconds * 1000).toISOString()
@@ -131,6 +222,7 @@ const normalizeNewsArticles = (symbol, articles, limit) => {
       publishedAt,
       summary: article.summary || '',
       image: article.image || null,
+      sentiment: classifyNewsSentiment(article.headline, article.summary),
     };
   });
 };
@@ -361,17 +453,19 @@ export const getStockHistory = async (symbol, period = '1m') => {
   }
 };
 
-export const getStockNews = async (symbol, limit = 5) => {
+export const getStockNews = async (symbol, { limit = DEFAULT_NEWS_LIMIT, cursor = 0 } = {}) => {
   const normalizedSymbol = symbol.toUpperCase();
-  const parsedLimit = Number(limit) || 5;
-  const cacheKey = getCacheKey('news', `${normalizedSymbol}:${parsedLimit}`);
+  const parsedLimit = Number(limit) || DEFAULT_NEWS_LIMIT;
+  const parsedCursor = Number(cursor) || 0;
+  const cacheKey = getCacheKey('news', normalizedSymbol);
   const redis = getRedisClient();
+  let allNews = null;
 
   if (redis) {
     try {
       const cached = await redis.get(cacheKey);
       if (cached) {
-        return JSON.parse(cached);
+        allNews = JSON.parse(cached);
       }
     } catch (error) {
       logger.warn('Redis cache read error:', error);
@@ -379,49 +473,67 @@ export const getStockNews = async (symbol, limit = 5) => {
   }
 
   try {
-    let news = [];
-    const provider = getStockNewsProvider();
+    if (!allNews) {
+      let news = [];
+      const provider = getStockNewsProvider();
 
-    if (provider === 'mock') {
-      news = getMockStockNews(normalizedSymbol).slice(0, parsedLimit);
-    } else if (provider === 'finnhub') {
-      const apiKey = getStockNewsApiKey();
-      if (!apiKey || apiKey === 'demo') {
-        throw new AppError('Stock news provider is not configured', 500);
+      if (provider === 'mock') {
+        news = getMockStockNews(normalizedSymbol);
+      } else if (provider === 'finnhub') {
+        const apiKey = getStockNewsApiKey();
+        if (!apiKey || apiKey === 'demo') {
+          throw new AppError('Stock news provider is not configured', 500);
+        }
+
+        const today = new Date();
+        const fromDate = new Date(today);
+        fromDate.setDate(fromDate.getDate() - 7);
+
+        const response = await axios.get(`${FINNHUB_BASE_URL}/company-news`, {
+          params: {
+            symbol: normalizedSymbol,
+            from: fromDate.toISOString().split('T')[0],
+            to: today.toISOString().split('T')[0],
+            token: apiKey,
+          },
+          timeout: 10000,
+        });
+
+        if (!Array.isArray(response.data)) {
+          throw new AppError('Unexpected stock news provider response', 500);
+        }
+
+        news = normalizeNewsArticles(normalizedSymbol, response.data);
+      } else {
+        throw new AppError(`Unsupported stock news provider: ${provider}`, 500);
       }
 
-      const today = new Date();
-      const fromDate = new Date(today);
-      fromDate.setDate(fromDate.getDate() - 7);
+      allNews = news
+        .map((article) => ({
+          ...article,
+          sentiment: classifyNewsSentiment(article.headline, article.summary),
+        }))
+        .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
-      const response = await axios.get(`${FINNHUB_BASE_URL}/company-news`, {
-        params: {
-          symbol: normalizedSymbol,
-          from: fromDate.toISOString().split('T')[0],
-          to: today.toISOString().split('T')[0],
-          token: apiKey,
-        },
-        timeout: 10000,
-      });
-
-      if (!Array.isArray(response.data)) {
-        throw new AppError('Unexpected stock news provider response', 500);
+      if (redis) {
+        try {
+          await redis.setEx(cacheKey, CACHE_TTL.NEWS, JSON.stringify(allNews));
+        } catch (error) {
+          logger.warn('Redis cache write error:', error);
+        }
       }
-
-      news = normalizeNewsArticles(normalizedSymbol, response.data, parsedLimit);
-    } else {
-      throw new AppError(`Unsupported stock news provider: ${provider}`, 500);
     }
 
-    if (redis) {
-      try {
-        await redis.setEx(cacheKey, CACHE_TTL.NEWS, JSON.stringify(news));
-      } catch (error) {
-        logger.warn('Redis cache write error:', error);
-      }
-    }
+    const paginatedNews = allNews.slice(parsedCursor, parsedCursor + parsedLimit);
+    const nextCursorValue = parsedCursor + parsedLimit;
+    const hasMore = nextCursorValue < allNews.length;
+    const nextCursor = hasMore ? String(nextCursorValue) : null;
 
-    return news;
+    return {
+      news: paginatedNews,
+      nextCursor,
+      hasMore,
+    };
   } catch (error) {
     logger.error(`Get stock news error for ${normalizedSymbol}:`, error);
     if (error instanceof AppError) {

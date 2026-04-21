@@ -61,11 +61,16 @@ export const getStockNews = async (req, res, next) => {
   try {
     const { symbol } = req.params;
     const limit = req.query.limit ? parseInt(req.query.limit, 10) : 5;
-    const news = await stockService.getStockNews(symbol, limit);
+    const cursor = req.query.cursor ? parseInt(req.query.cursor, 10) : 0;
+    const newsResponse = await stockService.getStockNews(symbol, { limit, cursor });
 
     res.status(200).json({
       success: true,
-      data: { news },
+      data: {
+        news: newsResponse.news,
+        nextCursor: newsResponse.nextCursor,
+        hasMore: newsResponse.hasMore,
+      },
     });
   } catch (error) {
     next(error);

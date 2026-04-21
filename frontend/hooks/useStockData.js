@@ -1,6 +1,20 @@
 import { useState, useEffect, useCallback } from 'react'
 import { stockApi } from '../services/stockApi'
 
+const mergeArticlesById = (existingArticles, newArticles) => {
+  const seenIds = new Set(existingArticles.map((article) => article.id))
+  const dedupedIncoming = newArticles.filter((article) => {
+    if (!article?.id || seenIds.has(article.id)) {
+      return false
+    }
+
+    seenIds.add(article.id)
+    return true
+  })
+
+  return [...existingArticles, ...dedupedIncoming]
+}
+
 export const useStockQuote = (symbol, refreshInterval = 5000) => {
   const [quote, setQuote] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -62,25 +76,38 @@ export const useStockProfile = (symbol) => {
 export const useStockNews = (symbol, limit = 5) => {
   const [news, setNews] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
+  const [loadMoreError, setLoadMoreError] = useState(null)
+  const [nextCursor, setNextCursor] = useState(null)
+  const [hasMore, setHasMore] = useState(false)
 
   useEffect(() => {
     if (!symbol) {
       setNews([])
       setLoading(false)
+      setLoadingMore(false)
       setError(null)
+      setLoadMoreError(null)
+      setNextCursor(null)
+      setHasMore(false)
       return
     }
 
     const fetchNews = async () => {
       try {
         setError(null)
+        setLoadMoreError(null)
         setLoading(true)
-        const data = await stockApi.getNews(symbol, limit)
-        setNews(Array.isArray(data) ? data : [])
+        const payload = await stockApi.getNews(symbol, limit)
+        setNews(Array.isArray(payload.news) ? payload.news : [])
+        setNextCursor(payload.nextCursor ?? null)
+        setHasMore(Boolean(payload.hasMore))
       } catch (err) {
         setError(err.message)
         setNews([])
+        setNextCursor(null)
+        setHasMore(false)
       } finally {
         setLoading(false)
       }
@@ -89,7 +116,34 @@ export const useStockNews = (symbol, limit = 5) => {
     fetchNews()
   }, [symbol, limit])
 
-  return { news, loading, error }
+  const loadMore = useCallback(async () => {
+    if (!symbol || !hasMore || nextCursor === null || loadingMore) {
+      return
+    }
+
+    try {
+      setLoadMoreError(null)
+      setLoadingMore(true)
+      const payload = await stockApi.getNews(symbol, limit, nextCursor)
+      setNews((previousNews) => mergeArticlesById(previousNews, Array.isArray(payload.news) ? payload.news : []))
+      setNextCursor(payload.nextCursor ?? null)
+      setHasMore(Boolean(payload.hasMore))
+    } catch (err) {
+      setLoadMoreError(err.message)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [symbol, limit, nextCursor, hasMore, loadingMore])
+
+  return {
+    news,
+    loading,
+    loadingMore,
+    error,
+    loadMoreError,
+    hasMore,
+    loadMore,
+  }
 }
 
 export const useStockSearch = () => {

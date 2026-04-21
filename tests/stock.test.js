@@ -129,15 +129,20 @@ describe('Stock API', () => {
   });
 
   describe('GET /api/v1/stocks/:symbol/news', () => {
-    it('should return news for valid symbol (AAPL)', async () => {
+    it('should return first page with pagination contract and sentiment enum', async () => {
       const response = await request(app)
-        .get('/api/v1/stocks/AAPL/news');
+        .get('/api/v1/stocks/AAPL/news')
+        .query({ limit: 3 });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('news');
+      expect(response.body.data).toHaveProperty('nextCursor');
+      expect(response.body.data).toHaveProperty('hasMore');
       expect(Array.isArray(response.body.data.news)).toBe(true);
-      expect(response.body.data.news.length).toBeLessThanOrEqual(5);
+      expect(response.body.data.news.length).toBe(3);
+      expect(response.body.data.hasMore).toBe(true);
+      expect(response.body.data.nextCursor).toBe('3');
 
       if (response.body.data.news.length > 0) {
         const article = response.body.data.news[0];
@@ -146,17 +151,44 @@ describe('Stock API', () => {
         expect(article).toHaveProperty('url');
         expect(article).toHaveProperty('source');
         expect(article).toHaveProperty('publishedAt');
+        expect(article).toHaveProperty('sentiment');
+        expect(['positive', 'neutral', 'negative']).toContain(article.sentiment);
       }
     });
 
-    it('should respect valid limit query param', async () => {
-      const response = await request(app)
+    it('should return second page using cursor and appendable cursor contract', async () => {
+      const firstPage = await request(app)
         .get('/api/v1/stocks/MSFT/news')
-        .query({ limit: 2 });
+        .query({ limit: 4 });
+
+      expect(firstPage.status).toBe(200);
+      expect(firstPage.body.data.hasMore).toBe(true);
+      expect(firstPage.body.data.nextCursor).toBe('4');
+
+      const secondPage = await request(app)
+        .get('/api/v1/stocks/MSFT/news')
+        .query({ limit: 4, cursor: firstPage.body.data.nextCursor });
+
+      expect(secondPage.status).toBe(200);
+      expect(secondPage.body.success).toBe(true);
+      expect(Array.isArray(secondPage.body.data.news)).toBe(true);
+      expect(secondPage.body.data.news.length).toBeGreaterThan(0);
+      expect(secondPage.body.data.news.length).toBeLessThanOrEqual(4);
+
+      secondPage.body.data.news.forEach((article) => {
+        expect(['positive', 'neutral', 'negative']).toContain(article.sentiment);
+      });
+    });
+
+    it('should return hasMore false and nextCursor null at end of results', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/AAPL/news')
+        .query({ limit: 20, cursor: 8 });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.news.length).toBeLessThanOrEqual(2);
+      expect(response.body.data.hasMore).toBe(false);
+      expect(response.body.data.nextCursor).toBeNull();
     });
 
     it('should reject invalid symbol format', async () => {
@@ -171,6 +203,15 @@ describe('Stock API', () => {
       const response = await request(app)
         .get('/api/v1/stocks/AAPL/news')
         .query({ limit: 0 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should reject invalid cursor', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/AAPL/news')
+        .query({ cursor: 'bad-cursor' });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);

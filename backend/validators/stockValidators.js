@@ -29,6 +29,10 @@ export const getStockNewsValidator = [
     .withMessage('Stock symbol is required')
     .matches(/^[A-Za-z0-9.]+$/)
     .withMessage('Invalid stock symbol format'),
+  query('cursor')
+    .optional()
+    .isInt({ min: 0, max: 10000 })
+    .withMessage('Cursor must be an integer between 0 and 10000'),
   query('limit')
     .optional()
     .isInt({ min: 1, max: 20 })
