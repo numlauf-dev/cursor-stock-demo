@@ -1,4 +1,5 @@
 import { usePortfolio } from '../context/PortfolioContext'
+import { useWatchlist } from '../context/WatchlistContext'
 import PortfolioSummary from '../components/organisms/PortfolioSummary'
 import HoldingsTable from '../components/organisms/HoldingsTable'
 import WatchlistHighlights from '../components/organisms/WatchlistHighlights'
@@ -8,6 +9,7 @@ import Button from '../components/atoms/Button'
 
 const Dashboard = () => {
   const { resetPortfolio } = usePortfolio()
+  const { watchlist, activeWatchlistId, isReady } = useWatchlist()
 
   const handleReset = () => {
     if (window.confirm('Are you sure you want to reset your portfolio? This will delete all holdings and transactions and reset your cash to $100,000.')) {
@@ -28,7 +30,11 @@ const Dashboard = () => {
         <PortfolioSummary />
         
         <WatchlistHighlights />
-        <WatchlistNewsPanel />
+        <WatchlistNewsPanel 
+          watchlistId={activeWatchlistId}
+          symbols={watchlist}
+          isWatchlistReady={isReady}
+        />
         
         <div>
           <h2 className="text-2xl font-semibold text-white mb-4">Your Holdings</h2>

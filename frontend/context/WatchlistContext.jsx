@@ -9,6 +9,7 @@ export const WatchlistProvider = ({ children }) => {
   const [activeWatchlistId, setActiveWatchlistId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [isReady, setIsReady] = useState(false)
+  const [hasRetriedSync, setHasRetriedSync] = useState(false)
 
   const syncWatchlistFromApi = useCallback(async () => {
     setLoading(true)
@@ -37,6 +38,19 @@ export const WatchlistProvider = ({ children }) => {
   useEffect(() => {
     syncWatchlistFromApi()
   }, [syncWatchlistFromApi])
+
+  useEffect(() => {
+    if (!isReady || activeWatchlistId || hasRetriedSync) {
+      return
+    }
+
+    const retryTimer = setTimeout(() => {
+      setHasRetriedSync(true)
+      syncWatchlistFromApi()
+    }, 1000)
+
+    return () => clearTimeout(retryTimer)
+  }, [isReady, activeWatchlistId, hasRetriedSync, syncWatchlistFromApi])
 
   const addToWatchlist = async (symbol) => {
     const normalizedSymbol = symbol?.toUpperCase()

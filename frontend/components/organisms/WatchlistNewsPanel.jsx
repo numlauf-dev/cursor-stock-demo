@@ -45,7 +45,7 @@ const formatPublishedTime = (publishedAt) => {
   })
 }
 
-const WatchlistNewsPanel = ({ watchlistId, symbols, isWatchlistReady }) => {
+const WatchlistNewsPanel = ({ watchlistId, symbols = [], isWatchlistReady = false }) => {
   const [articles, setArticles] = useState([])
   const [nextCursor, setNextCursor] = useState(null)
   const [hasMore, setHasMore] = useState(false)
@@ -124,6 +124,15 @@ const WatchlistNewsPanel = ({ watchlistId, symbols, isWatchlistReady }) => {
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
         <h2 className="text-2xl font-semibold text-white mb-4">Watchlist News</h2>
         <div className="text-sm text-gray-400">Add symbols to your watchlist to see aggregated news.</div>
+      </div>
+    )
+  }
+
+  if (!watchlistId) {
+    return (
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h2 className="text-2xl font-semibold text-white mb-4">Watchlist News</h2>
+        <div className="text-sm text-gray-400">Syncing your watchlist news...</div>
       </div>
     )
   }
