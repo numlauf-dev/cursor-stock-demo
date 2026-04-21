@@ -7,6 +7,7 @@ import {
   updateWatchlistValidator,
   addStockValidator,
   removeStockValidator,
+  getWatchlistNewsValidator,
 } from '../validators/watchlistValidators.js';
 import { handleValidationErrors } from '../middleware/validation.js';
 
@@ -19,6 +20,7 @@ router.use(apiLimiter);
 router.get('/', watchlistController.getUserWatchlists);
 router.post('/', createWatchlistValidator, handleValidationErrors, watchlistController.createWatchlist);
 router.get('/:id', watchlistController.getWatchlist);
+router.get('/:id/news', getWatchlistNewsValidator, handleValidationErrors, watchlistController.getWatchlistNews);
 router.put('/:id', updateWatchlistValidator, handleValidationErrors, watchlistController.updateWatchlist);
 router.delete('/:id', watchlistController.deleteWatchlist);
 router.post('/:id/stocks', addStockValidator, handleValidationErrors, watchlistController.addStockToWatchlist);

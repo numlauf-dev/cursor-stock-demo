@@ -107,6 +107,7 @@ const getMockStockNews = (symbol) => {
       hoursAgo: 1,
       headline: `${normalized} extends gains as investors react to latest guidance`,
       summary: `${normalized} shares traded higher after management reiterated near-term outlook.`,
+      sharedUrl: 'shared-market-briefing',
     },
     {
       slug: 'analyst-view',
@@ -171,7 +172,9 @@ const getMockStockNews = (symbol) => {
     return {
       id: `${normalized}-${Math.floor(new Date(publishedAt).getTime() / 1000)}-${index}`,
       headline: row.headline,
-      url: `https://example.com/news/${normalized.toLowerCase()}-${row.slug}`,
+      url: row.sharedUrl
+        ? `https://example.com/news/${row.sharedUrl}`
+        : `https://example.com/news/${normalized.toLowerCase()}-${row.slug}`,
       source: row.source,
       publishedAt,
       summary: row.summary,
@@ -541,6 +544,26 @@ export const getStockNews = async (symbol, { limit = DEFAULT_NEWS_LIMIT, cursor 
     }
     throw new AppError('Failed to fetch stock news', 500);
   }
+};
+
+export const getAllStockNews = async (symbol) => {
+  const normalizedSymbol = symbol.toUpperCase();
+  const cacheKey = getCacheKey('news', normalizedSymbol);
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (error) {
+      logger.warn('Redis cache read error:', error);
+    }
+  }
+
+  const fullFeed = await getStockNews(normalizedSymbol, { limit: 1000, cursor: 0 });
+  return fullFeed.news;
 };
 
 export const getTrendingStocks = async () => {

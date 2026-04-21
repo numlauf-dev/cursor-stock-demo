@@ -2,6 +2,7 @@ import { usePortfolio } from '../context/PortfolioContext'
 import PortfolioSummary from '../components/organisms/PortfolioSummary'
 import HoldingsTable from '../components/organisms/HoldingsTable'
 import WatchlistHighlights from '../components/organisms/WatchlistHighlights'
+import WatchlistNewsPanel from '../components/organisms/WatchlistNewsPanel'
 import PortfolioCommentary from '../components/organisms/PortfolioCommentary'
 import Button from '../components/atoms/Button'
 
@@ -27,6 +28,7 @@ const Dashboard = () => {
         <PortfolioSummary />
         
         <WatchlistHighlights />
+        <WatchlistNewsPanel />
         
         <div>
           <h2 className="text-2xl font-semibold text-white mb-4">Your Holdings</h2>

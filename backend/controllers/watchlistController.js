@@ -98,3 +98,33 @@ export const removeStockFromWatchlist = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getWatchlistNews = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : 20;
+    const cursor = req.query.cursor ? parseInt(req.query.cursor, 10) : 0;
+    const symbol = req.query.symbol ? req.query.symbol.toUpperCase() : undefined;
+    const sentiment = req.query.sentiment;
+    const sort = req.query.sort || 'publishedAt:desc';
+
+    const newsResponse = await watchlistService.getWatchlistNews(id, req.user.id, {
+      limit,
+      cursor,
+      symbol,
+      sentiment,
+      sort,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        news: newsResponse.news,
+        nextCursor: newsResponse.nextCursor,
+        hasMore: newsResponse.hasMore,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

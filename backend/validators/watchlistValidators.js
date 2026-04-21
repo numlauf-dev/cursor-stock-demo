@@ -1,4 +1,4 @@
-import { body, param } from 'express-validator';
+import { body, param, query } from 'express-validator';
 
 export const createWatchlistValidator = [
   body('name')
@@ -37,4 +37,29 @@ export const removeStockValidator = [
     .trim()
     .notEmpty()
     .withMessage('Stock symbol is required'),
+];
+
+export const getWatchlistNewsValidator = [
+  param('id').isUUID().withMessage('Invalid watchlist ID'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 50 })
+    .withMessage('Limit must be an integer between 1 and 50'),
+  query('cursor')
+    .optional()
+    .isInt({ min: 0, max: 10000 })
+    .withMessage('Cursor must be an integer between 0 and 10000'),
+  query('symbol')
+    .optional()
+    .trim()
+    .matches(/^[A-Za-z0-9.]+$/)
+    .withMessage('Symbol must contain only letters, numbers, and dots'),
+  query('sentiment')
+    .optional()
+    .isIn(['positive', 'neutral', 'negative'])
+    .withMessage('Sentiment must be one of: positive, neutral, negative'),
+  query('sort')
+    .optional()
+    .matches(/^publishedAt:(asc|desc)$/)
+    .withMessage('Sort must be one of: publishedAt:asc, publishedAt:desc'),
 ];
