@@ -270,4 +270,24 @@ export const api = {
     });
     return result;
   },
+
+  async getWatchlistNews(watchlistId, { limit = 20, cursor = null, symbol, sentiment, sort } = {}) {
+    const params = new URLSearchParams({ limit: String(limit) });
+
+    if (cursor !== null && cursor !== undefined) {
+      params.set('cursor', String(cursor));
+    }
+    if (symbol) {
+      params.set('symbol', symbol);
+    }
+    if (sentiment) {
+      params.set('sentiment', sentiment);
+    }
+    if (sort) {
+      params.set('sort', sort);
+    }
+
+    const result = await apiRequest(`/watchlists/${watchlistId}/news?${params.toString()}`);
+    return result.data;
+  },
 };

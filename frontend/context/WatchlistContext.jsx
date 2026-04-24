@@ -1,55 +1,115 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { storage } from '../utils/storage'
+import { api } from '../utils/api'
 
 const WatchlistContext = createContext()
+const WATCHLIST_SYNC_RETRY_DELAY_MS = 1000
 
 export const WatchlistProvider = ({ children }) => {
-  // Load initial watchlist from localStorage or use empty array
-  const [watchlist, setWatchlist] = useState(() => {
-    return storage.getWatchlist() || []
-  })
+  const [watchlist, setWatchlist] = useState(() => storage.getWatchlist() || [])
+  const [activeWatchlistId, setActiveWatchlistId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [isReady, setIsReady] = useState(false)
+  const [hasRetriedSync, setHasRetriedSync] = useState(false)
 
-  // Save to localStorage whenever watchlist changes
+  const syncWatchlistFromApi = useCallback(async () => {
+    setLoading(true)
+    try {
+      let watchlists = await api.getWatchlists()
+      if (!watchlists || watchlists.length === 0) {
+        await api.createWatchlist('My Watchlist')
+        watchlists = await api.getWatchlists()
+      }
+
+      const primaryWatchlist = watchlists[0]
+      const symbols = primaryWatchlist?.items?.map((item) => item.symbol) || []
+      setActiveWatchlistId(primaryWatchlist?.id || null)
+      setWatchlist(symbols)
+      storage.saveWatchlist(symbols)
+    } catch (error) {
+      setWatchlist(storage.getWatchlist() || [])
+      setActiveWatchlistId(null)
+    } finally {
+      setLoading(false)
+      setIsReady(true)
+    }
+  }, [])
+
   useEffect(() => {
-    storage.saveWatchlist(watchlist)
-  }, [watchlist])
+    syncWatchlistFromApi()
+  }, [syncWatchlistFromApi])
 
-  const addToWatchlist = (symbol) => {
-    if (watchlist.includes(symbol)) {
+  useEffect(() => {
+    if (!isReady || activeWatchlistId || hasRetriedSync) {
+      return
+    }
+
+    const retryTimer = setTimeout(() => {
+      setHasRetriedSync(true)
+      syncWatchlistFromApi()
+    }, WATCHLIST_SYNC_RETRY_DELAY_MS)
+
+    return () => clearTimeout(retryTimer)
+  }, [isReady, activeWatchlistId, hasRetriedSync, syncWatchlistFromApi])
+
+  const addToWatchlist = async (symbol) => {
+    const normalizedSymbol = symbol?.toUpperCase()
+    if (!normalizedSymbol || watchlist.includes(normalizedSymbol)) {
       return false
     }
 
-    setWatchlist([...watchlist, symbol])
+    if (activeWatchlistId) {
+      await api.addStockToWatchlist(activeWatchlistId, normalizedSymbol)
+    }
+
+    const nextWatchlist = [...watchlist, normalizedSymbol]
+    setWatchlist(nextWatchlist)
+    storage.saveWatchlist(nextWatchlist)
     return true
   }
 
-  const removeFromWatchlist = (symbol) => {
-    setWatchlist(watchlist.filter(s => s !== symbol))
-  }
-
-  const isInWatchlist = (symbol) => {
-    return watchlist.includes(symbol)
-  }
-
-  const toggleWatchlist = (symbol) => {
-    if (isInWatchlist(symbol)) {
-      removeFromWatchlist(symbol)
-      return false
-    } else {
-      const added = addToWatchlist(symbol)
-      return added
+  const removeFromWatchlist = async (symbol) => {
+    const normalizedSymbol = symbol?.toUpperCase()
+    if (!normalizedSymbol) {
+      return
     }
+
+    if (activeWatchlistId) {
+      await api.removeStockFromWatchlist(activeWatchlistId, normalizedSymbol)
+    }
+
+    const nextWatchlist = watchlist.filter((s) => s !== normalizedSymbol)
+    setWatchlist(nextWatchlist)
+    storage.saveWatchlist(nextWatchlist)
+  }
+
+  const isInWatchlist = (symbol) => watchlist.includes(symbol)
+
+  const toggleWatchlist = async (symbol) => {
+    if (!symbol) {
+      return false
+    }
+
+    const normalizedSymbol = symbol.toUpperCase()
+    if (isInWatchlist(normalizedSymbol)) {
+      await removeFromWatchlist(normalizedSymbol)
+      return false
+    }
+
+    return addToWatchlist(normalizedSymbol)
   }
 
   return (
     <WatchlistContext.Provider value={{
       watchlist,
-      loading: false,
-      isReady: true,
+      activeWatchlistId,
+      loading,
+      isReady,
       addToWatchlist,
       removeFromWatchlist,
       isInWatchlist,
-      toggleWatchlist
+      toggleWatchlist,
+      refreshWatchlist: syncWatchlistFromApi,
     }}>
       {children}
     </WatchlistContext.Provider>

@@ -14,10 +14,27 @@ export const getStockHistoryValidator = [
     .trim()
     .notEmpty()
     .withMessage('Stock symbol is required')
-    .matches(/^[A-Z0-9.]+$/)
+    .matches(/^[A-Za-z0-9.]+$/)
     .withMessage('Invalid stock symbol format'),
   query('period')
     .optional()
     .isIn(['1d', '1w', '1m', '3m', '1y'])
     .withMessage('Period must be one of: 1d, 1w, 1m, 3m, 1y'),
+];
+
+export const getStockNewsValidator = [
+  param('symbol')
+    .trim()
+    .notEmpty()
+    .withMessage('Stock symbol is required')
+    .matches(/^[A-Za-z0-9.]+$/)
+    .withMessage('Invalid stock symbol format'),
+  query('cursor')
+    .optional()
+    .isInt({ min: 0, max: 10000 })
+    .withMessage('Cursor must be an integer between 0 and 10000'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 20 })
+    .withMessage('Limit must be an integer between 1 and 20'),
 ];
