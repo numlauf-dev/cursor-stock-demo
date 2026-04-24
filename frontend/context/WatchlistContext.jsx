@@ -3,6 +3,7 @@ import { storage } from '../utils/storage'
 import { api } from '../utils/api'
 
 const WatchlistContext = createContext()
+const WATCHLIST_SYNC_RETRY_DELAY_MS = 1000
 
 export const WatchlistProvider = ({ children }) => {
   const [watchlist, setWatchlist] = useState(() => storage.getWatchlist() || [])
@@ -26,7 +27,6 @@ export const WatchlistProvider = ({ children }) => {
       setWatchlist(symbols)
       storage.saveWatchlist(symbols)
     } catch (error) {
-      console.warn('Failed to sync watchlist from API, using local storage fallback:', error)
       setWatchlist(storage.getWatchlist() || [])
       setActiveWatchlistId(null)
     } finally {
@@ -47,7 +47,7 @@ export const WatchlistProvider = ({ children }) => {
     const retryTimer = setTimeout(() => {
       setHasRetriedSync(true)
       syncWatchlistFromApi()
-    }, 1000)
+    }, WATCHLIST_SYNC_RETRY_DELAY_MS)
 
     return () => clearTimeout(retryTimer)
   }, [isReady, activeWatchlistId, hasRetriedSync, syncWatchlistFromApi])

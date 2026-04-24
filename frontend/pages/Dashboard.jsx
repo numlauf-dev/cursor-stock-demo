@@ -30,7 +30,7 @@ const Dashboard = () => {
         <PortfolioSummary />
         
         <WatchlistHighlights />
-        <WatchlistNewsPanel 
+        <WatchlistNewsPanel
           watchlistId={activeWatchlistId}
           symbols={watchlist}
           isWatchlistReady={isReady}

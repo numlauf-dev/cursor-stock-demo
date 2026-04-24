@@ -119,6 +119,15 @@ const WatchlistNewsPanel = ({ watchlistId, symbols = [], isWatchlistReady = fals
     }
   }
 
+  if (!isWatchlistReady) {
+    return (
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h2 className="text-2xl font-semibold text-white mb-4">Watchlist News</h2>
+        <div className="text-sm text-gray-400">Loading watchlist news...</div>
+      </div>
+    )
+  }
+
   if (!symbols.length) {
     return (
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
@@ -132,7 +141,7 @@ const WatchlistNewsPanel = ({ watchlistId, symbols = [], isWatchlistReady = fals
     return (
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
         <h2 className="text-2xl font-semibold text-white mb-4">Watchlist News</h2>
-        <div className="text-sm text-gray-400">Syncing your watchlist news...</div>
+        <div className="text-sm text-gray-400">Unable to sync watchlist news right now.</div>
       </div>
     )
   }

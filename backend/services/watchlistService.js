@@ -109,7 +109,7 @@ export const deleteWatchlist = async (watchlistId, userId) => {
 
 export const addStockToWatchlist = async (watchlistId, userId, symbol) => {
   // Verify ownership
-  const watchlist = await getWatchlistById(watchlistId, userId);
+  await getWatchlistById(watchlistId, userId);
 
   if (!symbol || symbol.trim().length === 0) {
     throw new ValidationError('Stock symbol is required');
