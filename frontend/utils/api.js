@@ -1,5 +1,6 @@
 // API utility for backend calls
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const DEBUG_API_LOGS = import.meta.env.DEV && import.meta.env.VITE_DEBUG_API === 'true';
 
 /**
  * Get auth token from localStorage
@@ -37,7 +38,9 @@ const ensureAuth = async () => {
   const timeSinceLastAttempt = Date.now() - lastAuthAttempt;
   if (lastAuthError && lastAuthError.includes('429') && timeSinceLastAttempt < RATE_LIMIT_COOLDOWN) {
     const waitTime = Math.ceil((RATE_LIMIT_COOLDOWN - timeSinceLastAttempt) / 1000);
-    console.log(`[API] Rate limited, waiting ${waitTime} seconds before retry...`);
+    if (DEBUG_API_LOGS) {
+      console.warn(`[API] Rate limited, waiting ${waitTime} seconds before retry...`);
+    }
     throw new Error(`Rate limited. Please wait ${waitTime} seconds and try again.`);
   }
 
@@ -60,7 +63,6 @@ const ensureAuth = async () => {
         const data = await result.json();
         if (data.success && data.data.token) {
           setAuthToken(data.data.token);
-          console.log('[API] Authentication completed');
           lastAuthError = null; // Clear error on success
         }
       } else if (result.status === 429) {
@@ -107,13 +109,6 @@ const apiRequest = async (endpoint, options = {}) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  console.log('[API] Making request:', { 
-    endpoint: `${API_BASE_URL}${endpoint}`, 
-    method: options.method || 'GET',
-    hasToken: !!token,
-    tokenPreview: token ? `${token.substring(0, 20)}...` : 'none'
-  });
-
   let response;
   try {
     response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -125,11 +120,11 @@ const apiRequest = async (endpoint, options = {}) => {
     throw new Error(`Network error: ${networkError.message}. Is the backend server running on ${API_BASE_URL}?`);
   }
 
-  console.log('[API] Response status:', response.status, response.statusText);
-
   // Handle 401 by re-authenticating and retrying once
   if (response.status === 401) {
-    console.log('[API] Got 401, re-authenticating...');
+    if (DEBUG_API_LOGS) {
+      console.warn('[API] Got 401, re-authenticating...');
+    }
     // Clear invalid token
     localStorage.removeItem('auth_token');
     // Re-authenticate
@@ -143,7 +138,6 @@ const apiRequest = async (endpoint, options = {}) => {
         ...options,
         headers,
       });
-      console.log('[API] Retry response status:', response.status, response.statusText);
     }
   }
 
@@ -160,7 +154,6 @@ const apiRequest = async (endpoint, options = {}) => {
   }
 
   const data = await response.json();
-  console.log('[API] Response data:', data);
   return data;
 };
 
@@ -250,13 +243,11 @@ export const api = {
   },
 
   async addStockToWatchlist(watchlistId, symbol) {
-    console.log('[API] addStockToWatchlist called:', { watchlistId, symbol });
     try {
       const result = await apiRequest(`/watchlists/${watchlistId}/stocks`, {
         method: 'POST',
         body: JSON.stringify({ symbol }),
       });
-      console.log('[API] addStockToWatchlist success:', result);
       return result.data.item;
     } catch (error) {
       console.error('[API] addStockToWatchlist error:', error);
