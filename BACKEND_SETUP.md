@@ -41,8 +41,14 @@ JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRE=24h
 
 # Stock API Configuration
-STOCK_API_KEY=your-api-key-here
-STOCK_API_PROVIDER=finnhub
+# auto -> Finnhub when FINNHUB_API_KEY/VITE_FINNHUB_API_KEY is real,
+# Alpha Vantage when STOCK_API_KEY is real, otherwise mock.
+STOCK_API_PROVIDER=auto
+FINNHUB_API_KEY=your-finnhub-api-key-here
+VITE_FINNHUB_API_KEY=your-finnhub-api-key-here
+
+# Optional: only needed if you want to force Alpha Vantage
+STOCK_API_KEY=
 
 # Redis Configuration (optional)
 REDIS_URL=redis://localhost:6379
@@ -109,8 +115,11 @@ The application will work without Redis, but caching will be disabled.
 #### Option 1: Finnhub (Recommended - Free Tier)
 1. Sign up at [https://finnhub.io](https://finnhub.io)
 2. Get your free API key (60 requests/minute)
-3. Set `STOCK_API_KEY` in `.env`
-4. Set `STOCK_API_PROVIDER=finnhub`
+3. Set `FINNHUB_API_KEY` in `.env` (or `VITE_FINNHUB_API_KEY` if you want the frontend to use the same key)
+4. Leave `STOCK_API_PROVIDER=auto` or set `STOCK_API_PROVIDER=finnhub`
+5. Quotes, search, news, and AI portfolio analysis will now use Finnhub-backed prices
+
+**History note:** Finnhub's free tier does not reliably return candle history for every symbol/period. The backend now tries Finnhub candles first and gracefully falls back to mock history when Finnhub history is unavailable, so quote/search/analysis stay real without breaking charts.
 
 #### Option 2: Alpha Vantage (Free Tier)
 1. Sign up at [https://www.alphavantage.co/support/#api-key](https://www.alphavantage.co/support/#api-key)
@@ -118,7 +127,7 @@ The application will work without Redis, but caching will be disabled.
 3. Set `STOCK_API_KEY` in `.env`
 4. Set `STOCK_API_PROVIDER=alphavantage`
 
-**Note:** If no API key is provided, the application will use mock data for development.
+**Note:** If no real Finnhub or Alpha Vantage key is provided, the application will use mock data for development.
 
 ## Running the Server
 

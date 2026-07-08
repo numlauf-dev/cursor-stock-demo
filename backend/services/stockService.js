@@ -3,10 +3,9 @@ import { getRedisClient } from '../config/redis.js';
 import logger from '../utils/logger.js';
 import { AppError, NotFoundError } from '../utils/errors.js';
 
-const STOCK_API_PROVIDER = process.env.STOCK_API_PROVIDER || 'alphavantage';
-const STOCK_API_KEY = process.env.STOCK_API_KEY;
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
 const DEFAULT_NEWS_LIMIT = 5;
+const DEFAULT_STOCK_API_PROVIDER = 'auto';
 
 // Cache TTLs (in seconds)
 const CACHE_TTL = {
@@ -57,12 +56,46 @@ const alphaVantageClient = axios.create({
   timeout: 10000,
 });
 
-const fetchFromAlphaVantage = async (params) => {
+const getAlphaVantageApiKey = () => process.env.STOCK_API_KEY;
+
+const getFinnhubApiKey = () => process.env.FINNHUB_API_KEY || process.env.VITE_FINNHUB_API_KEY;
+
+const hasRealApiKey = (apiKey) => Boolean(apiKey && apiKey !== 'demo');
+
+export const resolveStockApiConfig = () => {
+  const configuredProvider = (process.env.STOCK_API_PROVIDER || DEFAULT_STOCK_API_PROVIDER).toLowerCase();
+  const alphaVantageApiKey = getAlphaVantageApiKey();
+  const finnhubApiKey = getFinnhubApiKey();
+
+  if (configuredProvider === 'mock') {
+    return { provider: 'mock', apiKey: null };
+  }
+
+  if (configuredProvider === 'finnhub' && hasRealApiKey(finnhubApiKey)) {
+    return { provider: 'finnhub', apiKey: finnhubApiKey };
+  }
+
+  if (configuredProvider === 'alphavantage' && hasRealApiKey(alphaVantageApiKey)) {
+    return { provider: 'alphavantage', apiKey: alphaVantageApiKey };
+  }
+
+  if (hasRealApiKey(finnhubApiKey)) {
+    return { provider: 'finnhub', apiKey: finnhubApiKey };
+  }
+
+  if (hasRealApiKey(alphaVantageApiKey)) {
+    return { provider: 'alphavantage', apiKey: alphaVantageApiKey };
+  }
+
+  return { provider: 'mock', apiKey: null };
+};
+
+const fetchFromAlphaVantage = async (params, apiKey) => {
   try {
     const response = await alphaVantageClient.get('', {
       params: {
         ...params,
-        apikey: STOCK_API_KEY,
+        apikey: apiKey,
       },
     });
 
@@ -78,6 +111,23 @@ const fetchFromAlphaVantage = async (params) => {
 };
 
 // Mock data for development/testing when API key is not available
+const fetchFromFinnhub = async (path, params, apiKey) => {
+  try {
+    const response = await axios.get(`${FINNHUB_BASE_URL}/${path}`, {
+      params: {
+        ...params,
+        token: apiKey,
+      },
+      timeout: 10000,
+    });
+
+    return response.data;
+  } catch (error) {
+    logger.error('Finnhub API Error:', error);
+    throw error;
+  }
+};
+
 const getMockStockData = (symbol) => ({
   'Global Quote': {
     '01. symbol': symbol,
@@ -92,6 +142,148 @@ const getMockStockData = (symbol) => ({
     '10. change percent': '1.67%',
   },
 });
+
+const getMockSearchData = (query) => ({
+  bestMatches: [
+    {
+      '1. symbol': query.toUpperCase(),
+      '2. name': `${query.toUpperCase()} Inc.`,
+      '3. type': 'Equity',
+      '4. region': 'United States',
+      '5. marketOpen': '09:30',
+      '6. marketClose': '16:00',
+      '7. timezone': 'UTC-5',
+      '8. currency': 'USD',
+      '9. matchScore': '1.0000',
+    },
+  ],
+});
+
+const getMockHistoryData = (period) => {
+  const dates = [];
+  const now = new Date();
+  const days = period === '1d' ? 1 : period === '1w' ? 7 : period === '1m' ? 30 : period === '3m' ? 90 : 365;
+
+  for (let i = 0; i < days; i++) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    dates.push(date.toISOString().split('T')[0]);
+  }
+
+  return {
+    'Time Series (Daily)': dates.reduce((acc, date) => {
+      acc[date] = {
+        '1. open': '150.00',
+        '2. high': '155.00',
+        '3. low': '149.00',
+        '4. close': '152.50',
+        '5. volume': '1000000',
+      };
+      return acc;
+    }, {}),
+  };
+};
+
+const getLatestTradingDay = () => new Date().toISOString().split('T')[0];
+
+const toNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toInteger = (value, fallback = 0) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+export const formatFinnhubQuote = (symbol, quote) => {
+  const price = toNumber(quote?.c, NaN);
+  if (!Number.isFinite(price) || price <= 0) {
+    throw new NotFoundError(`Stock quote not found for symbol: ${symbol}`);
+  }
+
+  return {
+    symbol: symbol.toUpperCase(),
+    open: toNumber(quote?.o),
+    high: toNumber(quote?.h),
+    low: toNumber(quote?.l),
+    price,
+    volume: toInteger(quote?.v),
+    latestTradingDay: getLatestTradingDay(),
+    previousClose: toNumber(quote?.pc),
+    change: toNumber(quote?.d),
+    changePercent: toNumber(quote?.dp),
+  };
+};
+
+const formatAlphaVantageQuote = (quote) => {
+  if (!quote || !quote['05. price']) {
+    throw new NotFoundError(`Stock quote not found for symbol: ${quote?.['01. symbol'] || 'unknown'}`);
+  }
+
+  return {
+    symbol: quote['01. symbol'],
+    open: parseFloat(quote['02. open']),
+    high: parseFloat(quote['03. high']),
+    low: parseFloat(quote['04. low']),
+    price: parseFloat(quote['05. price']),
+    volume: parseInt(quote['06. volume'], 10),
+    latestTradingDay: quote['07. latest trading day'],
+    previousClose: parseFloat(quote['08. previous close']),
+    change: parseFloat(quote['09. change']),
+    changePercent: parseFloat(quote['10. change percent'].replace('%', '')),
+  };
+};
+
+const formatFinnhubSearchResults = (results = []) => {
+  return results
+    .filter((match) => match?.symbol || match?.displaySymbol)
+    .map((match) => ({
+      '1. symbol': match.symbol || match.displaySymbol,
+      '2. name': match.description || match.symbol || match.displaySymbol,
+      '3. type': match.type || '',
+      '4. region': match.region || '',
+      '5. marketOpen': '',
+      '6. marketClose': '',
+      '7. timezone': '',
+      '8. currency': '',
+      '9. matchScore': '',
+    }));
+};
+
+const getFinnhubHistoryParams = (period) => {
+  const now = Math.floor(Date.now() / 1000);
+  const day = 24 * 60 * 60;
+  const periodToRange = {
+    '1d': { from: now - day, resolution: '60' },
+    '1w': { from: now - (7 * day), resolution: 'D' },
+    '1m': { from: now - (30 * day), resolution: 'D' },
+    '3m': { from: now - (90 * day), resolution: 'D' },
+    '1y': { from: now - (365 * day), resolution: 'W' },
+  };
+
+  const { from, resolution } = periodToRange[period] || periodToRange['1m'];
+  return {
+    from,
+    to: now,
+    resolution,
+  };
+};
+
+const formatFinnhubHistory = (data) => {
+  if (data?.s !== 'ok' || !Array.isArray(data.t)) {
+    throw new AppError('Finnhub history is unavailable for this symbol/plan', 502);
+  }
+
+  return data.t.map((timestamp, index) => ({
+    date: new Date(timestamp * 1000).toISOString().split('T')[0],
+    open: toNumber(data.o?.[index]),
+    high: toNumber(data.h?.[index]),
+    low: toNumber(data.l?.[index]),
+    close: toNumber(data.c?.[index]),
+    volume: toInteger(data.v?.[index]),
+  }));
+};
 
 const getStockNewsProvider = () => process.env.STOCK_NEWS_PROVIDER || 'mock';
 
@@ -247,34 +439,23 @@ export const searchStocks = async (query) => {
   }
 
   try {
-    let data;
+    const { provider, apiKey } = resolveStockApiConfig();
+    let results;
 
-    if (!STOCK_API_KEY || STOCK_API_PROVIDER === 'mock') {
+    if (provider === 'mock') {
       // Mock data for development
       logger.info('Using mock data for stock search');
-      data = {
-        bestMatches: [
-          {
-            '1. symbol': query.toUpperCase(),
-            '2. name': `${query.toUpperCase()} Inc.`,
-            '3. type': 'Equity',
-            '4. region': 'United States',
-            '5. marketOpen': '09:30',
-            '6. marketClose': '16:00',
-            '7. timezone': 'UTC-5',
-            '8. currency': 'USD',
-            '9. matchScore': '1.0000',
-          },
-        ],
-      };
+      results = getMockSearchData(query).bestMatches;
+    } else if (provider === 'finnhub') {
+      const data = await fetchFromFinnhub('search', { q: query }, apiKey);
+      results = formatFinnhubSearchResults(data?.result || []);
     } else {
-      data = await fetchFromAlphaVantage({
+      const data = await fetchFromAlphaVantage({
         function: 'SYMBOL_SEARCH',
         keywords: query,
-      });
+      }, apiKey);
+      results = data.bestMatches || [];
     }
-
-    const results = data.bestMatches || [];
 
     // Cache results
     if (redis && results.length > 0) {
@@ -309,36 +490,24 @@ export const getStockQuote = async (symbol) => {
   }
 
   try {
-    let data;
+    const normalizedSymbol = symbol.toUpperCase();
+    const { provider, apiKey } = resolveStockApiConfig();
+    let formattedQuote;
 
-    if (!STOCK_API_KEY || STOCK_API_PROVIDER === 'mock') {
+    if (provider === 'mock') {
       // Mock data for development
       logger.info('Using mock data for stock quote');
-      data = getMockStockData(symbol.toUpperCase());
+      formattedQuote = formatAlphaVantageQuote(getMockStockData(normalizedSymbol)['Global Quote']);
+    } else if (provider === 'finnhub') {
+      const data = await fetchFromFinnhub('quote', { symbol: normalizedSymbol }, apiKey);
+      formattedQuote = formatFinnhubQuote(normalizedSymbol, data);
     } else {
-      data = await fetchFromAlphaVantage({
+      const data = await fetchFromAlphaVantage({
         function: 'GLOBAL_QUOTE',
-        symbol: symbol.toUpperCase(),
-      });
+        symbol: normalizedSymbol,
+      }, apiKey);
+      formattedQuote = formatAlphaVantageQuote(data['Global Quote']);
     }
-
-    const quote = data['Global Quote'];
-    if (!quote || !quote['05. price']) {
-      throw new NotFoundError(`Stock quote not found for symbol: ${symbol}`);
-    }
-
-    const formattedQuote = {
-      symbol: quote['01. symbol'],
-      open: parseFloat(quote['02. open']),
-      high: parseFloat(quote['03. high']),
-      low: parseFloat(quote['04. low']),
-      price: parseFloat(quote['05. price']),
-      volume: parseInt(quote['06. volume']),
-      latestTradingDay: quote['07. latest trading day'],
-      previousClose: parseFloat(quote['08. previous close']),
-      change: parseFloat(quote['09. change']),
-      changePercent: parseFloat(quote['10. change percent'].replace('%', '')),
-    };
 
     // Cache result
     if (redis) {
@@ -376,6 +545,9 @@ export const getStockHistory = async (symbol, period = '1m') => {
   }
 
   try {
+    const normalizedSymbol = symbol.toUpperCase();
+    const { provider, apiKey } = resolveStockApiConfig();
+
     // Map period to Alpha Vantage function
     const functionMap = {
       '1d': 'TIME_SERIES_INTRADAY',
@@ -386,56 +558,64 @@ export const getStockHistory = async (symbol, period = '1m') => {
     };
 
     const functionName = functionMap[period] || 'TIME_SERIES_DAILY';
+    let history;
 
-    let data;
-
-    if (!STOCK_API_KEY || STOCK_API_PROVIDER === 'mock') {
+    if (provider === 'mock') {
       // Mock historical data
       logger.info('Using mock data for stock history');
-      const dates = [];
-      const now = new Date();
-      const days = period === '1d' ? 1 : period === '1w' ? 7 : period === '1m' ? 30 : period === '3m' ? 90 : 365;
-
-      for (let i = 0; i < days; i++) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        dates.push(date.toISOString().split('T')[0]);
+      const data = getMockHistoryData(period);
+      const timeSeriesKey = Object.keys(data).find((key) => key.includes('Time Series'));
+      history = Object.entries(data[timeSeriesKey]).map(([date, values]) => ({
+        date,
+        open: parseFloat(values['1. open']),
+        high: parseFloat(values['2. high']),
+        low: parseFloat(values['3. low']),
+        close: parseFloat(values['4. close']),
+        volume: parseInt(values['5. volume'], 10),
+      }));
+    } else if (provider === 'finnhub') {
+      try {
+        const params = getFinnhubHistoryParams(period);
+        const data = await fetchFromFinnhub('stock/candle', {
+          symbol: normalizedSymbol,
+          ...params,
+        }, apiKey);
+        history = formatFinnhubHistory(data);
+      } catch (error) {
+        logger.warn(`Falling back to mock stock history for ${normalizedSymbol}:`, error);
+        const data = getMockHistoryData(period);
+        const timeSeriesKey = Object.keys(data).find((key) => key.includes('Time Series'));
+        history = Object.entries(data[timeSeriesKey]).map(([date, values]) => ({
+          date,
+          open: parseFloat(values['1. open']),
+          high: parseFloat(values['2. high']),
+          low: parseFloat(values['3. low']),
+          close: parseFloat(values['4. close']),
+          volume: parseInt(values['5. volume'], 10),
+        }));
       }
-
-      data = {
-        'Time Series (Daily)': dates.reduce((acc, date) => {
-          acc[date] = {
-            '1. open': '150.00',
-            '2. high': '155.00',
-            '3. low': '149.00',
-            '4. close': '152.50',
-            '5. volume': '1000000',
-          };
-          return acc;
-        }, {}),
-      };
     } else {
-      data = await fetchFromAlphaVantage({
+      const data = await fetchFromAlphaVantage({
         function: functionName,
-        symbol: symbol.toUpperCase(),
+        symbol: normalizedSymbol,
         ...(functionName === 'TIME_SERIES_INTRADAY' && { interval: '60min' }),
         outputsize: period === '1y' ? 'full' : 'compact',
-      });
-    }
+      }, apiKey);
 
-    const timeSeriesKey = Object.keys(data).find((key) => key.includes('Time Series'));
-    if (!timeSeriesKey || !data[timeSeriesKey]) {
-      throw new NotFoundError(`Historical data not found for symbol: ${symbol}`);
-    }
+      const timeSeriesKey = Object.keys(data).find((key) => key.includes('Time Series'));
+      if (!timeSeriesKey || !data[timeSeriesKey]) {
+        throw new NotFoundError(`Historical data not found for symbol: ${symbol}`);
+      }
 
-    const history = Object.entries(data[timeSeriesKey]).map(([date, values]) => ({
-      date,
-      open: parseFloat(values['1. open'] || values['1. open']),
-      high: parseFloat(values['2. high'] || values['2. high']),
-      low: parseFloat(values['3. low'] || values['3. low']),
-      close: parseFloat(values['4. close'] || values['4. close']),
-      volume: parseInt(values['5. volume'] || values['5. volume']),
-    }));
+      history = Object.entries(data[timeSeriesKey]).map(([date, values]) => ({
+        date,
+        open: parseFloat(values['1. open'] || values['1. open']),
+        high: parseFloat(values['2. high'] || values['2. high']),
+        low: parseFloat(values['3. low'] || values['3. low']),
+        close: parseFloat(values['4. close'] || values['4. close']),
+        volume: parseInt(values['5. volume'] || values['5. volume'], 10),
+      }));
+    }
 
     // Cache result
     if (redis) {
