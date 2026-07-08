@@ -1,6 +1,9 @@
 export default {
   testEnvironment: 'node',
   transform: {},
+  globalSetup: './tests/setup/globalSetup.js',
+  setupFiles: ['./tests/setup/env.js'],
+  setupFilesAfterEnv: ['./tests/setup/afterEnv.js'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
