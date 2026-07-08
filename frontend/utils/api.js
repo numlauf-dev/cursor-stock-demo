@@ -189,7 +189,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ symbol, quantity, price }),
     });
-    return result.data;
+    return result.data.portfolio;
   },
 
   async sellStock(symbol, quantity, price) {
@@ -197,7 +197,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ symbol, quantity, price }),
     });
-    return result.data;
+    return result.data.portfolio;
   },
 
   async migratePortfolio(portfolioData) {
@@ -212,7 +212,7 @@ export const api = {
     const result = await apiRequest('/portfolio/reset', {
       method: 'POST',
     });
-    return result;
+    return result.data.portfolio;
   },
 
   async analyzePortfolio(holdings) {

@@ -9,7 +9,6 @@ const router = express.Router();
 
 // All routes require authentication
 router.use(authenticate);
-router.use(portfolioLimiter);
 
 router.get('/', portfolioController.getPortfolio);
 router.post('/buy', portfolioController.buyStock);
@@ -18,6 +17,7 @@ router.post('/migrate', portfolioController.migratePortfolio);
 router.post('/reset', portfolioController.resetPortfolio);
 router.post(
   '/analyze',
+  portfolioLimiter,
   analyzePortfolioValidator,
   handleValidationErrors,
   portfolioController.analyzePortfolio

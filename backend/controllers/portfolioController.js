@@ -7,6 +7,24 @@ import logger from '../utils/logger.js';
 import { ValidationError } from '../utils/errors.js';
 import crypto from 'crypto';
 
+const serializePortfolio = (portfolio) => ({
+  cash: portfolio.cash,
+  holdings: portfolio.holdings.map((holding) => ({
+    symbol: holding.symbol,
+    quantity: holding.quantity,
+    avgPrice: holding.avgPrice,
+  })),
+  transactions: portfolio.transactions.map((transaction) => ({
+    id: transaction.id,
+    type: transaction.type,
+    symbol: transaction.symbol,
+    quantity: transaction.quantity,
+    price: transaction.price,
+    total: transaction.total,
+    timestamp: transaction.timestamp.toISOString(),
+  })),
+});
+
 /**
  * Generate cache key from holdings data
  */
@@ -51,7 +69,6 @@ export const analyzePortfolio = async (req, res, next) => {
     // Check cache first
     const cacheKey = generateCacheKey(holdings);
     const redis = getRedisClient();
-    let cached = false;
 
     if (redis) {
       try {
@@ -133,23 +150,7 @@ export const getPortfolio = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: {
-        portfolio: {
-          cash: portfolio.cash,
-          holdings: portfolio.holdings.map((h) => ({
-            symbol: h.symbol,
-            quantity: h.quantity,
-            avgPrice: h.avgPrice,
-          })),
-          transactions: portfolio.transactions.map((t) => ({
-            id: t.id,
-            type: t.type,
-            symbol: t.symbol,
-            quantity: t.quantity,
-            price: t.price,
-            total: t.total,
-            timestamp: t.timestamp.toISOString(),
-          })),
-        },
+        portfolio: serializePortfolio(portfolio),
       },
     });
   } catch (error) {
@@ -168,29 +169,18 @@ export const buyStock = async (req, res, next) => {
       throw new ValidationError('Symbol, quantity, and price are required');
     }
 
-    const result = await portfolioService.buyStock(
+    await portfolioService.buyStock(
       req.user.id,
       symbol,
       parseFloat(quantity),
       parseFloat(price)
     );
+    const portfolio = await portfolioService.getUserPortfolio(req.user.id);
 
     res.status(200).json({
       success: true,
       data: {
-        portfolio: {
-          cash: result.portfolio.cash,
-        },
-        holding: result.holding,
-        transaction: {
-          id: result.transaction.id,
-          type: result.transaction.type,
-          symbol: result.transaction.symbol,
-          quantity: result.transaction.quantity,
-          price: result.transaction.price,
-          total: result.transaction.total,
-          timestamp: result.transaction.timestamp.toISOString(),
-        },
+        portfolio: serializePortfolio(portfolio),
       },
     });
   } catch (error) {
@@ -209,29 +199,18 @@ export const sellStock = async (req, res, next) => {
       throw new ValidationError('Symbol, quantity, and price are required');
     }
 
-    const result = await portfolioService.sellStock(
+    await portfolioService.sellStock(
       req.user.id,
       symbol,
       parseFloat(quantity),
       parseFloat(price)
     );
+    const portfolio = await portfolioService.getUserPortfolio(req.user.id);
 
     res.status(200).json({
       success: true,
       data: {
-        portfolio: {
-          cash: result.portfolio.cash,
-        },
-        holding: result.holding,
-        transaction: {
-          id: result.transaction.id,
-          type: result.transaction.type,
-          symbol: result.transaction.symbol,
-          quantity: result.transaction.quantity,
-          price: result.transaction.price,
-          total: result.transaction.total,
-          timestamp: result.transaction.timestamp.toISOString(),
-        },
+        portfolio: serializePortfolio(portfolio),
       },
     });
   } catch (error) {
@@ -250,16 +229,13 @@ export const migratePortfolio = async (req, res, next) => {
       req.user.id,
       portfolioData
     );
+    const portfolio = await portfolioService.getUserPortfolio(req.user.id);
 
     res.status(200).json({
       success: true,
       data: {
         migrated: result !== null,
-        portfolio: result
-          ? {
-              cash: result.cash,
-            }
-          : null,
+        portfolio: serializePortfolio(portfolio),
       },
     });
   } catch (error) {
@@ -273,10 +249,13 @@ export const migratePortfolio = async (req, res, next) => {
 export const resetPortfolio = async (req, res, next) => {
   try {
     await portfolioService.resetPortfolio(req.user.id);
+    const portfolio = await portfolioService.getUserPortfolio(req.user.id);
 
     res.status(200).json({
       success: true,
-      message: 'Portfolio reset successfully',
+      data: {
+        portfolio: serializePortfolio(portfolio),
+      },
     });
   } catch (error) {
     next(error);

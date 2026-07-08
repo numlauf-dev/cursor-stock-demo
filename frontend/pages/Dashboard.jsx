@@ -11,9 +11,9 @@ const Dashboard = () => {
   const { resetPortfolio } = usePortfolio()
   const { watchlist, activeWatchlistId, isReady } = useWatchlist()
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (window.confirm('Are you sure you want to reset your portfolio? This will delete all holdings and transactions and reset your cash to $100,000.')) {
-      resetPortfolio()
+      await resetPortfolio()
     }
   }
 
