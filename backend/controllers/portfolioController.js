@@ -69,7 +69,6 @@ export const analyzePortfolio = async (req, res, next) => {
     // Check cache first
     const cacheKey = generateCacheKey(holdings);
     const redis = getRedisClient();
-    let cached = false;
 
     if (redis) {
       try {
