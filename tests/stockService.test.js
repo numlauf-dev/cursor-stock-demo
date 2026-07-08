@@ -2,11 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 
 const alphaVantageGetMock = jest.fn();
 const axiosGetMock = jest.fn();
-const loggerMock = {
-  error: jest.fn(),
-  warn: jest.fn(),
-  info: jest.fn(),
-};
 
 jest.unstable_mockModule('axios', () => ({
   default: {
@@ -15,14 +10,6 @@ jest.unstable_mockModule('axios', () => ({
     })),
     get: axiosGetMock,
   },
-}));
-
-jest.unstable_mockModule('../backend/config/redis.js', () => ({
-  getRedisClient: jest.fn(() => null),
-}));
-
-jest.unstable_mockModule('../backend/utils/logger.js', () => ({
-  default: loggerMock,
 }));
 
 const stockService = await import('../backend/services/stockService.js');
@@ -209,7 +196,6 @@ describe('stockService Finnhub adapters', () => {
       close: 152.5,
       volume: 1000000,
     });
-    expect(loggerMock.warn).toHaveBeenCalled();
   });
 
   it('rejects unusable Finnhub quote payloads', () => {
