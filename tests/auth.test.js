@@ -1,4 +1,5 @@
 import request from 'supertest';
+import bcrypt from 'bcrypt';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { loadTestApp, loadTestPrisma } from './helpers/testConfig.js';
 
@@ -30,11 +31,12 @@ describe('Authentication API', () => {
       },
     });
 
-    const seedUserResponse = await request(app)
-      .post('/api/v1/auth/register')
-      .send(loginUser);
-
-    expect(seedUserResponse.status).toBe(201);
+    await prisma.user.create({
+      data: {
+        ...loginUser,
+        password: await bcrypt.hash(loginUser.password, 10),
+      },
+    });
   });
 
   afterAll(async () => {
