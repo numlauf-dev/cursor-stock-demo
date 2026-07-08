@@ -36,7 +36,7 @@ cd cursor-stock-demo
 npm install
 ```
 
-3. (Optional) Set up API key:
+3. (Optional) Set up API keys:
    - Sign up for a free API key at [Finnhub](https://finnhub.io)
    - Create a `.env` file in the root directory:
    ```bash
@@ -44,9 +44,12 @@ npm install
    ```
    - Add your API key to `.env`:
    ```
+   STOCK_API_PROVIDER=auto
+   FINNHUB_API_KEY=your_api_key_here
    VITE_FINNHUB_API_KEY=your_api_key_here
    ```
-   - Note: The app will work with mock data if no API key is provided
+   - Note: the backend now prefers Finnhub for quotes/search/news when a real Finnhub key is present, which keeps AI portfolio analysis on real prices instead of mock quotes
+   - If no real provider key is present, the app falls back to mock data
 
 4. Start the development server:
 ```bash
@@ -103,7 +106,7 @@ The app uses the Finnhub API for stock data:
   - Historical price data
   - Stock symbol search
 
-If no API key is provided or rate limits are exceeded, the app will fall back to mock data for demonstration purposes.
+If no real provider key is provided, the app will fall back to mock data for demonstration purposes. The backend stock service prefers Finnhub when `FINNHUB_API_KEY` or `VITE_FINNHUB_API_KEY` is set, can still be forced to Alpha Vantage with `STOCK_API_PROVIDER=alphavantage`, and gracefully falls back to mock history when Finnhub candle data is unavailable on the free tier.
 
 ## 🎨 Key Features Explained
 
