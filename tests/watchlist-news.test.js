@@ -1,21 +1,16 @@
 import request from 'supertest';
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import prisma from '../backend/config/database.js';
+import { loadTestApp, loadTestPrisma } from './helpers/testConfig.js';
 
 describe('Watchlist News API', () => {
   let app;
+  let prisma;
   let authHeader;
   let watchlistId;
 
   beforeAll(async () => {
-    process.env.NODE_ENV = 'test';
-    process.env.STOCK_API_PROVIDER = 'mock';
-    process.env.STOCK_API_KEY = 'test-key';
-    process.env.STOCK_NEWS_PROVIDER = 'mock';
-    process.env.JWT_SECRET = process.env.JWT_SECRET || 'default_secret_change_in_production';
-
-    const { default: testApp } = await import('../backend/server.js');
-    app = testApp;
+    app = await loadTestApp();
+    prisma = await loadTestPrisma();
 
     const defaultAuthResponse = await request(app)
       .post('/api/v1/auth/default')

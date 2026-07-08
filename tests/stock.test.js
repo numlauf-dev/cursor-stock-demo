@@ -1,24 +1,12 @@
 import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll } from '@jest/globals';
+import { loadTestApp } from './helpers/testConfig.js';
 
 describe('Stock API', () => {
   let app;
 
   beforeAll(async () => {
-    // Initialize test app
-    // Set test environment variables
-    process.env.NODE_ENV = 'test';
-    process.env.STOCK_API_PROVIDER = 'mock'; // Use mock data for tests
-    process.env.STOCK_API_KEY = 'test-key';
-    process.env.STOCK_NEWS_PROVIDER = 'mock';
-    
-    // Import app after env vars are set
-    const { default: testApp } = await import('../backend/server.js');
-    app = testApp;
-  });
-
-  afterAll(async () => {
-    // Cleanup
+    app = await loadTestApp();
   });
 
   describe('GET /api/v1/stocks/:symbol/history', () => {
