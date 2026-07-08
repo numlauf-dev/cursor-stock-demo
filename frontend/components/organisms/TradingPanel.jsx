@@ -12,10 +12,10 @@ const TradingPanel = ({ symbol, currentPrice }) => {
   const holding = getHolding(symbol)
   const availableShares = holding?.quantity || 0
 
-  const handleTrade = (quantity) => {
+  const handleTrade = async (quantity) => {
     const result = tradeType === 'BUY'
-      ? buyStock(symbol, quantity, currentPrice)
-      : sellStock(symbol, quantity, currentPrice)
+      ? await buyStock(symbol, quantity, currentPrice)
+      : await sellStock(symbol, quantity, currentPrice)
 
     if (result.success) {
       setNotification({

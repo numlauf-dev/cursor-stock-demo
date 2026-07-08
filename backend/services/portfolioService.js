@@ -1,7 +1,28 @@
 import prisma from '../config/database.js';
-import { NotFoundError, ValidationError } from '../utils/errors.js';
+import { ValidationError } from '../utils/errors.js';
 
 const INITIAL_CASH = 100000;
+const PORTFOLIO_TRANSACTION_TYPES = new Set(['BUY', 'SELL']);
+
+const normalizeMigratedHolding = (holding) => ({
+  symbol: holding.symbol?.trim().toUpperCase(),
+  quantity: Number(holding.quantity),
+  avgPrice: Number(holding.avgPrice),
+});
+
+const normalizeMigratedTransaction = (transaction) => {
+  const quantity = Number(transaction.quantity);
+  const price = Number(transaction.price);
+
+  return {
+    type: transaction.type?.toUpperCase?.(),
+    symbol: transaction.symbol?.trim().toUpperCase(),
+    quantity,
+    price,
+    total: Number(transaction.total) || quantity * price,
+    timestamp: transaction.timestamp ? new Date(transaction.timestamp) : new Date(),
+  };
+};
 
 /**
  * Get or create portfolio for a user
@@ -230,6 +251,42 @@ export const migrateLocalStorageData = async (userId, portfolioData) => {
   }
 
   const { cash, holdings = [], transactions = [] } = portfolioData;
+  const normalizedCash = typeof cash === 'number' ? cash : Number(cash);
+  const normalizedHoldings = holdings.map(normalizeMigratedHolding);
+  const normalizedTransactions = transactions.map(normalizeMigratedTransaction);
+
+  for (const holding of normalizedHoldings) {
+    if (!holding.symbol) {
+      throw new ValidationError('Holding symbol is required');
+    }
+    if (Number.isNaN(holding.quantity) || holding.quantity <= 0) {
+      throw new ValidationError('Holding quantity must be greater than 0');
+    }
+    if (Number.isNaN(holding.avgPrice) || holding.avgPrice <= 0) {
+      throw new ValidationError('Holding avgPrice must be greater than 0');
+    }
+  }
+
+  for (const transaction of normalizedTransactions) {
+    if (!PORTFOLIO_TRANSACTION_TYPES.has(transaction.type)) {
+      throw new ValidationError('Transaction type must be BUY or SELL');
+    }
+    if (!transaction.symbol) {
+      throw new ValidationError('Transaction symbol is required');
+    }
+    if (Number.isNaN(transaction.quantity) || transaction.quantity <= 0) {
+      throw new ValidationError('Transaction quantity must be greater than 0');
+    }
+    if (Number.isNaN(transaction.price) || transaction.price <= 0) {
+      throw new ValidationError('Transaction price must be greater than 0');
+    }
+    if (Number.isNaN(transaction.total) || transaction.total <= 0) {
+      throw new ValidationError('Transaction total must be greater than 0');
+    }
+    if (Number.isNaN(transaction.timestamp.getTime())) {
+      throw new ValidationError('Transaction timestamp must be valid');
+    }
+  }
 
   // Get or create portfolio
   const portfolio = await getOrCreatePortfolio(userId);
@@ -253,32 +310,32 @@ export const migrateLocalStorageData = async (userId, portfolioData) => {
     // Update cash
     const updatedPortfolio = await tx.portfolio.update({
       where: { id: portfolio.id },
-      data: { cash: cash || INITIAL_CASH },
+      data: { cash: Number.isFinite(normalizedCash) ? normalizedCash : INITIAL_CASH },
     });
 
     // Create holdings
-    if (holdings.length > 0) {
+    if (normalizedHoldings.length > 0) {
       await tx.holding.createMany({
-        data: holdings.map((h) => ({
+        data: normalizedHoldings.map((holding) => ({
           portfolioId: portfolio.id,
-          symbol: h.symbol.toUpperCase(),
-          quantity: h.quantity,
-          avgPrice: h.avgPrice,
+          symbol: holding.symbol,
+          quantity: holding.quantity,
+          avgPrice: holding.avgPrice,
         })),
       });
     }
 
     // Create transactions
-    if (transactions.length > 0) {
+    if (normalizedTransactions.length > 0) {
       await tx.transaction.createMany({
-        data: transactions.map((t) => ({
+        data: normalizedTransactions.map((transaction) => ({
           portfolioId: portfolio.id,
-          type: t.type,
-          symbol: t.symbol.toUpperCase(),
-          quantity: t.quantity,
-          price: t.price,
-          total: t.total,
-          timestamp: t.timestamp ? new Date(t.timestamp) : new Date(),
+          type: transaction.type,
+          symbol: transaction.symbol,
+          quantity: transaction.quantity,
+          price: transaction.price,
+          total: transaction.total,
+          timestamp: transaction.timestamp,
         })),
       });
     }

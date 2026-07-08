@@ -1,7 +1,9 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { storage } from '../utils/storage'
+import { api } from '../utils/api'
 
 const PortfolioContext = createContext()
+const PORTFOLIO_SYNC_RETRY_DELAY_MS = 1000
 
 const INITIAL_CASH = 100000
 
@@ -11,133 +13,165 @@ const initialState = {
   transactions: [], // { id, type, symbol, quantity, price, total, timestamp }
 }
 
-export const PortfolioProvider = ({ children }) => {
-  // Load initial state from localStorage or use defaults
-  const [state, setState] = useState(() => {
-    const saved = storage.getPortfolio()
-    if (saved) {
-      return {
-        cash: saved.cash ?? INITIAL_CASH,
-        holdings: saved.holdings ?? [],
-        transactions: saved.transactions ?? [],
-      }
-    }
+const normalizeHolding = (holding = {}) => ({
+  symbol: holding.symbol?.toUpperCase?.() || '',
+  quantity: Number.isFinite(Number(holding.quantity)) ? Number(holding.quantity) : 0,
+  avgPrice: Number.isFinite(Number(holding.avgPrice)) ? Number(holding.avgPrice) : 0,
+})
+
+const normalizeTransaction = (transaction = {}) => {
+  const quantity = Number(transaction.quantity) || 0
+  const price = Number(transaction.price) || 0
+
+  return {
+    id: transaction.id ? String(transaction.id) : `${transaction.symbol || 'tx'}-${transaction.timestamp || Date.now()}`,
+    type: transaction.type?.toUpperCase?.() || '',
+    symbol: transaction.symbol?.toUpperCase?.() || '',
+    quantity,
+    price,
+    total: Number.isFinite(Number(transaction.total)) ? Number(transaction.total) : quantity * price,
+    timestamp: transaction.timestamp || new Date().toISOString(),
+  }
+}
+
+const normalizePortfolio = (portfolio) => {
+  if (!portfolio) {
     return initialState
-  })
+  }
 
-  // Save to localStorage whenever state changes
+  return {
+    cash: Number.isFinite(Number(portfolio.cash)) ? Number(portfolio.cash) : INITIAL_CASH,
+    holdings: Array.isArray(portfolio.holdings)
+      ? portfolio.holdings.map(normalizeHolding).filter((holding) => holding.symbol)
+      : [],
+    transactions: Array.isArray(portfolio.transactions)
+      ? portfolio.transactions.map(normalizeTransaction).filter((transaction) => transaction.symbol)
+      : [],
+  }
+}
+
+const hasPortfolioData = (portfolio) => {
+  if (!portfolio) {
+    return false
+  }
+
+  return (
+    portfolio.cash !== INITIAL_CASH ||
+    portfolio.holdings.length > 0 ||
+    portfolio.transactions.length > 0
+  )
+}
+
+const isFreshServerPortfolio = (portfolio) => (
+  portfolio.cash === INITIAL_CASH &&
+  portfolio.holdings.length === 0 &&
+  portfolio.transactions.length === 0
+)
+
+export const PortfolioProvider = ({ children }) => {
+  const [state, setState] = useState(() => normalizePortfolio(storage.getPortfolio()))
+  const [loading, setLoading] = useState(true)
+  const [isReady, setIsReady] = useState(false)
+  const [hasRetriedSync, setHasRetriedSync] = useState(false)
+  const [syncFailed, setSyncFailed] = useState(false)
+
+  const applyPortfolioState = useCallback((portfolio) => {
+    const normalizedPortfolio = normalizePortfolio(portfolio)
+    setState(normalizedPortfolio)
+    storage.savePortfolio(normalizedPortfolio)
+    return normalizedPortfolio
+  }, [])
+
+  const syncPortfolioFromApi = useCallback(async () => {
+    setLoading(true)
+
+    try {
+      const localPortfolio = normalizePortfolio(storage.getPortfolio())
+      const serverPortfolio = normalizePortfolio(await api.getPortfolio())
+      let nextPortfolio = serverPortfolio
+
+      if (hasPortfolioData(localPortfolio) && isFreshServerPortfolio(serverPortfolio)) {
+        const migrationResult = await api.migratePortfolio(localPortfolio)
+        nextPortfolio = normalizePortfolio(migrationResult.portfolio)
+      }
+
+      applyPortfolioState(nextPortfolio)
+      setSyncFailed(false)
+    } catch (error) {
+      applyPortfolioState(storage.getPortfolio())
+      setSyncFailed(true)
+    } finally {
+      setLoading(false)
+      setIsReady(true)
+    }
+  }, [applyPortfolioState])
+
   useEffect(() => {
-    storage.savePortfolio(state)
-  }, [state])
+    syncPortfolioFromApi()
+  }, [syncPortfolioFromApi])
 
-  const buyStock = (symbol, quantity, price) => {
-    const total = quantity * price
-    
-    if (state.cash < total) {
-      return { success: false, error: 'Insufficient funds' }
+  useEffect(() => {
+    if (!isReady || !syncFailed || hasRetriedSync) {
+      return
     }
 
-    setState(prev => {
-      const existingHolding = prev.holdings.find(h => h.symbol === symbol)
-      let newHoldings
+    const retryTimer = setTimeout(() => {
+      setHasRetriedSync(true)
+      syncPortfolioFromApi()
+    }, PORTFOLIO_SYNC_RETRY_DELAY_MS)
 
-      if (existingHolding) {
-        // Update existing holding
-        const newQuantity = existingHolding.quantity + quantity
-        const newAvgPrice = 
-          (existingHolding.avgPrice * existingHolding.quantity + total) / newQuantity
-        
-        newHoldings = prev.holdings.map(h =>
-          h.symbol === symbol
-            ? { ...h, quantity: newQuantity, avgPrice: newAvgPrice }
-            : h
-        )
-      } else {
-        // Add new holding
-        newHoldings = [...prev.holdings, {
-          symbol,
-          quantity,
-          avgPrice: price,
-        }]
-      }
+    return () => clearTimeout(retryTimer)
+  }, [hasRetriedSync, isReady, syncFailed, syncPortfolioFromApi])
 
-      const transaction = {
-        id: Date.now().toString(),
-        type: 'buy',
-        symbol,
-        quantity,
-        price,
-        total,
-        timestamp: new Date().toISOString(),
-      }
-
-      return {
-        cash: prev.cash - total,
-        holdings: newHoldings,
-        transactions: [transaction, ...prev.transactions],
-      }
-    })
-
-    return { success: true }
+  const buyStock = async (symbol, quantity, price) => {
+    try {
+      setLoading(true)
+      const portfolio = await api.buyStock(symbol, quantity, price)
+      applyPortfolioState(portfolio)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error.message }
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const sellStock = (symbol, quantity, price) => {
-    const holding = state.holdings.find(h => h.symbol === symbol)
-    
-    if (!holding) {
-      return { success: false, error: 'No holding found' }
+  const sellStock = async (symbol, quantity, price) => {
+    try {
+      setLoading(true)
+      const portfolio = await api.sellStock(symbol, quantity, price)
+      applyPortfolioState(portfolio)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error.message }
+    } finally {
+      setLoading(false)
     }
-
-    if (holding.quantity < quantity) {
-      return { success: false, error: 'Insufficient shares' }
-    }
-
-    setState(prev => {
-      const total = quantity * price
-      const newQuantity = holding.quantity - quantity
-      
-      const newHoldings = newQuantity > 0
-        ? prev.holdings.map(h =>
-            h.symbol === symbol
-              ? { ...h, quantity: newQuantity }
-              : h
-          )
-        : prev.holdings.filter(h => h.symbol !== symbol)
-
-      const transaction = {
-        id: Date.now().toString(),
-        type: 'sell',
-        symbol,
-        quantity,
-        price,
-        total,
-        timestamp: new Date().toISOString(),
-      }
-
-      return {
-        cash: prev.cash + total,
-        holdings: newHoldings,
-        transactions: [transaction, ...prev.transactions],
-      }
-    })
-
-    return { success: true }
   }
 
-  const resetPortfolio = () => {
-    setState(initialState)
-    storage.clearAll()
+  const resetPortfolio = async () => {
+    try {
+      setLoading(true)
+      const portfolio = await api.resetPortfolio()
+      applyPortfolioState(portfolio)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error.message }
+    } finally {
+      setLoading(false)
+    }
   }
 
   const getHolding = (symbol) => {
-    return state.holdings.find(h => h.symbol === symbol)
+    const normalizedSymbol = symbol?.toUpperCase?.()
+    return state.holdings.find((holding) => holding.symbol === normalizedSymbol)
   }
 
   const contextValue = {
     cash: state.cash,
     holdings: state.holdings,
     transactions: state.transactions,
-    loading: false,
+    loading,
     buyStock,
     sellStock,
     resetPortfolio,
