@@ -30,11 +30,11 @@ dist-ssr
 
 # Database
 *.db
+*.db-journal
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
-
-# Prisma
-prisma/migrations/*.sql
 
 # Logs directory
 logs/

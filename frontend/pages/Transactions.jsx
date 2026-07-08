@@ -51,7 +51,8 @@ const Transactions = () => {
             </thead>
             <tbody className="divide-y divide-gray-700">
               {transactions.map((transaction) => {
-                const isBuy = transaction.type === 'BUY'
+                const transactionType = transaction.type?.toUpperCase() || ''
+                const isBuy = transactionType === 'BUY'
                 const date = new Date(transaction.timestamp).toLocaleString()
 
                 return (
@@ -69,7 +70,7 @@ const Transactions = () => {
                           ? 'bg-green-900 text-green-200' 
                           : 'bg-red-900 text-red-200'
                       }`}>
-                        {transaction.type}
+                        {transactionType || transaction.type}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
