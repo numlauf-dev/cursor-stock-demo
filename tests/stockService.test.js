@@ -225,3 +225,31 @@ describe('stockService Finnhub adapters', () => {
     expect(() => formatFinnhubQuote('AAPL', { c: 0 })).toThrow('Stock quote not found for symbol: AAPL');
   });
 });
+
+describe('stockService mock quote stability', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = { ...originalEnv };
+    process.env.STOCK_API_PROVIDER = 'mock';
+    delete process.env.FINNHUB_API_KEY;
+    delete process.env.VITE_FINNHUB_API_KEY;
+    delete process.env.STOCK_API_KEY;
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  it('returns the same quote across repeated calls for the same symbol', async () => {
+    const firstQuote = await getStockQuote('bkkt');
+    const secondQuote = await getStockQuote('BKKT');
+
+    expect(firstQuote).toEqual(secondQuote);
+    expect(firstQuote).toMatchObject({
+      symbol: 'BKKT',
+      price: 152.5,
+      change: 2.5,
+      changePercent: 1.67,
+    });
+  });
+});

@@ -9,6 +9,38 @@ describe('Stock API', () => {
     app = await loadTestApp();
   });
 
+  describe('GET /api/v1/stocks/:symbol/quote', () => {
+    it('should return a quote for a valid symbol', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/AAPL/quote');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('quote');
+      expect(response.body.data.quote).toMatchObject({
+        symbol: 'AAPL',
+        open: expect.any(Number),
+        high: expect.any(Number),
+        low: expect.any(Number),
+        price: expect.any(Number),
+        previousClose: expect.any(Number),
+        change: expect.any(Number),
+        changePercent: expect.any(Number),
+      });
+    });
+
+    it('should return stable mock quotes across repeated requests for the same symbol', async () => {
+      const [firstResponse, secondResponse] = await Promise.all([
+        request(app).get('/api/v1/stocks/BKKT/quote'),
+        request(app).get('/api/v1/stocks/BKKT/quote'),
+      ]);
+
+      expect(firstResponse.status).toBe(200);
+      expect(secondResponse.status).toBe(200);
+      expect(firstResponse.body.data.quote).toEqual(secondResponse.body.data.quote);
+    });
+  });
+
   describe('GET /api/v1/stocks/:symbol/history', () => {
     it('should return history for valid symbol (AAPL)', async () => {
       const response = await request(app)
