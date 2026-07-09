@@ -4,6 +4,7 @@ import { useWatchlist } from '../context/WatchlistContext'
 import PriceDisplay from '../components/atoms/PriceDisplay'
 import Button from '../components/atoms/Button'
 import TradingPanel from '../components/organisms/TradingPanel'
+import StockChart from '../components/organisms/StockChart'
 import { formatCurrency } from '../utils/calculations'
 
 const StockDetail = () => {
@@ -152,11 +153,10 @@ const StockDetail = () => {
                 </span>
               </div>
             </div>
-            <div className="mt-6 pt-6 border-t border-gray-700">
-              <p className="text-sm text-gray-500">
-                Historical price charts require a premium API subscription. Current price data is available above.
-              </p>
-            </div>
+          </div>
+
+          <div className="mt-6">
+            <StockChart symbol={upperSymbol} />
           </div>
 
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 mt-6">

@@ -159,29 +159,43 @@ const getMockSearchData = (query) => ({
   ],
 });
 
-const getMockHistoryData = (period) => {
-  const dates = [];
-  const now = new Date();
-  const days = period === '1d' ? 1 : period === '1w' ? 7 : period === '1m' ? 30 : period === '3m' ? 90 : 365;
-
-  for (let i = 0; i < days; i++) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-    dates.push(date.toISOString().split('T')[0]);
-  }
-
-  return {
-    'Time Series (Daily)': dates.reduce((acc, date) => {
-      acc[date] = {
-        '1. open': '150.00',
-        '2. high': '155.00',
-        '3. low': '149.00',
-        '4. close': '152.50',
-        '5. volume': '1000000',
-      };
-      return acc;
-    }, {}),
+const getMockHistoryConfig = (period) => {
+  const periodConfig = {
+    '1d': { points: 7, stepMs: 60 * 60 * 1000 },
+    '1w': { points: 7, stepMs: 24 * 60 * 60 * 1000 },
+    '1m': { points: 30, stepMs: 24 * 60 * 60 * 1000 },
+    '3m': { points: 90, stepMs: 24 * 60 * 60 * 1000 },
+    '1y': { points: 52, stepMs: 7 * 24 * 60 * 60 * 1000 },
   };
+
+  return periodConfig[period] || periodConfig['1m'];
+};
+
+const getMockHistoryData = (period) => {
+  const { points, stepMs } = getMockHistoryConfig(period);
+  const endTime = Date.now();
+  const startTime = endTime - ((points - 1) * stepMs);
+  const startingPrice = 148;
+
+  return Array.from({ length: points }, (_, index) => {
+    const timestamp = startTime + (index * stepMs);
+    const trendComponent = ((index / Math.max(points - 1, 1)) - 0.5) * 8;
+    const oscillation = Math.sin(index * 1.35) * 2.4;
+    const open = startingPrice + trendComponent + oscillation;
+    const close = open + Math.cos(index * 0.85) * 1.6;
+    const high = Math.max(open, close) + 1.2 + ((index % 3) * 0.25);
+    const low = Math.min(open, close) - 1.1 - ((index % 2) * 0.2);
+    const volume = 900000 + (index * 27500);
+
+    return {
+      date: new Date(timestamp).toISOString(),
+      open: Number(open.toFixed(2)),
+      high: Number(high.toFixed(2)),
+      low: Number(low.toFixed(2)),
+      close: Number(close.toFixed(2)),
+      volume,
+    };
+  });
 };
 
 const getLatestTradingDay = () => new Date().toISOString().split('T')[0];
@@ -276,13 +290,21 @@ const formatFinnhubHistory = (data) => {
   }
 
   return data.t.map((timestamp, index) => ({
-    date: new Date(timestamp * 1000).toISOString().split('T')[0],
+    date: new Date(timestamp * 1000).toISOString(),
     open: toNumber(data.o?.[index]),
     high: toNumber(data.h?.[index]),
     low: toNumber(data.l?.[index]),
     close: toNumber(data.c?.[index]),
     volume: toInteger(data.v?.[index]),
   }));
+};
+
+const sortHistoryChronologically = (history = []) => {
+  return [...history].sort((left, right) => {
+    const leftTime = new Date(left.date).getTime();
+    const rightTime = new Date(right.date).getTime();
+    return leftTime - rightTime;
+  });
 };
 
 const getStockNewsProvider = () => process.env.STOCK_NEWS_PROVIDER || 'mock';
@@ -563,16 +585,7 @@ export const getStockHistory = async (symbol, period = '1m') => {
     if (provider === 'mock') {
       // Mock historical data
       logger.info('Using mock data for stock history');
-      const data = getMockHistoryData(period);
-      const timeSeriesKey = Object.keys(data).find((key) => key.includes('Time Series'));
-      history = Object.entries(data[timeSeriesKey]).map(([date, values]) => ({
-        date,
-        open: parseFloat(values['1. open']),
-        high: parseFloat(values['2. high']),
-        low: parseFloat(values['3. low']),
-        close: parseFloat(values['4. close']),
-        volume: parseInt(values['5. volume'], 10),
-      }));
+      history = getMockHistoryData(period);
     } else if (provider === 'finnhub') {
       try {
         const params = getFinnhubHistoryParams(period);
@@ -583,16 +596,7 @@ export const getStockHistory = async (symbol, period = '1m') => {
         history = formatFinnhubHistory(data);
       } catch (error) {
         logger.warn(`Falling back to mock stock history for ${normalizedSymbol}:`, error);
-        const data = getMockHistoryData(period);
-        const timeSeriesKey = Object.keys(data).find((key) => key.includes('Time Series'));
-        history = Object.entries(data[timeSeriesKey]).map(([date, values]) => ({
-          date,
-          open: parseFloat(values['1. open']),
-          high: parseFloat(values['2. high']),
-          low: parseFloat(values['3. low']),
-          close: parseFloat(values['4. close']),
-          volume: parseInt(values['5. volume'], 10),
-        }));
+        history = getMockHistoryData(period);
       }
     } else {
       const data = await fetchFromAlphaVantage({
@@ -608,7 +612,7 @@ export const getStockHistory = async (symbol, period = '1m') => {
       }
 
       history = Object.entries(data[timeSeriesKey]).map(([date, values]) => ({
-        date,
+        date: new Date(date).toISOString(),
         open: parseFloat(values['1. open'] || values['1. open']),
         high: parseFloat(values['2. high'] || values['2. high']),
         low: parseFloat(values['3. low'] || values['3. low']),
@@ -616,6 +620,8 @@ export const getStockHistory = async (symbol, period = '1m') => {
         volume: parseInt(values['5. volume'] || values['5. volume'], 10),
       }));
     }
+
+    history = sortHistoryChronologically(history);
 
     // Cache result
     if (redis) {

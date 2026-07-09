@@ -1,19 +1,88 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { useStockCandles } from '../../hooks/useStockData'
+import { useStockHistory } from '../../hooks/useStockData'
 import Button from '../atoms/Button'
+import { formatCurrency } from '../../utils/calculations'
 
 const timeRanges = [
-  { label: '1D', days: 1 },
-  { label: '1W', days: 7 },
-  { label: '1M', days: 30 },
-  { label: '3M', days: 90 },
-  { label: '1Y', days: 365 },
+  { label: '1D', period: '1d' },
+  { label: '1W', period: '1w' },
+  { label: '1M', period: '1m' },
+  { label: '3M', period: '3m' },
+  { label: '1Y', period: '1y' },
 ]
 
+const formatAxisLabel = (dateValue, period) => {
+  if (Number.isNaN(dateValue.getTime())) {
+    return ''
+  }
+
+  if (period === '1d') {
+    return dateValue.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  }
+
+  if (period === '1y') {
+    return dateValue.toLocaleDateString('en-US', {
+      month: 'short',
+      year: '2-digit',
+    })
+  }
+
+  return dateValue.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+const formatTooltipLabel = (dateValue, period) => {
+  if (Number.isNaN(dateValue.getTime())) {
+    return 'Unknown date'
+  }
+
+  if (period === '1d') {
+    return dateValue.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  }
+
+  return dateValue.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
 const StockChart = ({ symbol }) => {
-  const [selectedRange, setSelectedRange] = useState(30)
-  const { candles, loading } = useStockCandles(symbol, 'D', selectedRange)
+  const [selectedRange, setSelectedRange] = useState('1m')
+  const { history, loading, error, refresh } = useStockHistory(symbol, selectedRange)
+
+  const chartData = useMemo(() => {
+    return history
+      .map((candle) => {
+        const timestamp = new Date(candle.date)
+        if (Number.isNaN(timestamp.getTime())) {
+          return null
+        }
+
+        return {
+          timestamp: timestamp.getTime(),
+          label: formatAxisLabel(timestamp, selectedRange),
+          tooltipLabel: formatTooltipLabel(timestamp, selectedRange),
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+          volume: candle.volume,
+        }
+      })
+      .filter(Boolean)
+  }, [history, selectedRange])
 
   if (loading) {
     return (
@@ -26,10 +95,62 @@ const StockChart = ({ symbol }) => {
     )
   }
 
-  if (!candles || !candles.timestamps || candles.timestamps.length === 0) {
+  if (error) {
     return (
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-        <h2 className="text-xl font-semibold text-white mb-4">Price Chart</h2>
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-xl font-semibold text-white">Price Chart</h2>
+            <p className="text-sm text-gray-400">
+              Historical prices come from the backend and may fall back to demo history when provider candles are unavailable.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {timeRanges.map((range) => (
+              <Button
+                key={range.label}
+                variant={selectedRange === range.period ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedRange(range.period)}
+              >
+                {range.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="h-96 flex flex-col items-center justify-center text-center">
+          <p className="text-red-400 mb-4">Unable to load historical price data.</p>
+          <Button variant="outline" size="sm" onClick={refresh}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (chartData.length === 0) {
+    return (
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-xl font-semibold text-white">Price Chart</h2>
+            <p className="text-sm text-gray-400">
+              Historical prices come from the backend and may fall back to demo history when provider candles are unavailable.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {timeRanges.map((range) => (
+              <Button
+                key={range.label}
+                variant={selectedRange === range.period ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedRange(range.period)}
+              >
+                {range.label}
+              </Button>
+            ))}
+          </div>
+        </div>
         <div className="h-96 flex items-center justify-center text-gray-400">
           No chart data available
         </div>
@@ -37,31 +158,27 @@ const StockChart = ({ symbol }) => {
     )
   }
 
-  // Transform candles data for Recharts
-  const chartData = candles.timestamps.map((timestamp, index) => ({
-    date: new Date(timestamp * 1000).toLocaleDateString(),
-    price: candles.close[index],
-    high: candles.high[index],
-    low: candles.low[index],
-  }))
-
-  // Determine if the stock is up or down
-  const firstPrice = chartData[0]?.price || 0
-  const lastPrice = chartData[chartData.length - 1]?.price || 0
+  const firstPrice = chartData[0]?.close || 0
+  const lastPrice = chartData[chartData.length - 1]?.close || 0
   const isPositive = lastPrice >= firstPrice
   const lineColor = isPositive ? '#10b981' : '#ef4444'
 
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-white">Price Chart</h2>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-xl font-semibold text-white">Price Chart</h2>
+          <p className="text-sm text-gray-400">
+            Historical prices come from the backend and may fall back to demo history when provider candles are unavailable.
+          </p>
+        </div>
         <div className="flex gap-2">
           {timeRanges.map((range) => (
             <Button
               key={range.label}
-              variant={selectedRange === range.days ? 'primary' : 'outline'}
+              variant={selectedRange === range.period ? 'primary' : 'outline'}
               size="sm"
-              onClick={() => setSelectedRange(range.days)}
+              onClick={() => setSelectedRange(range.period)}
             >
               {range.label}
             </Button>
@@ -72,29 +189,32 @@ const StockChart = ({ symbol }) => {
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-          <XAxis 
-            dataKey="date" 
+          <XAxis
+            dataKey="label"
             stroke="#9ca3af"
             tick={{ fill: '#9ca3af' }}
+            minTickGap={24}
           />
-          <YAxis 
+          <YAxis
             stroke="#9ca3af"
             tick={{ fill: '#9ca3af' }}
             domain={['auto', 'auto']}
-            tickFormatter={(value) => `$${value.toFixed(2)}`}
+            width={92}
+            tickFormatter={(value) => formatCurrency(value)}
           />
           <Tooltip
+            labelFormatter={(_, payload) => payload?.[0]?.payload?.tooltipLabel || ''}
             contentStyle={{
               backgroundColor: '#1f2937',
               border: '1px solid #374151',
               borderRadius: '8px',
-              color: '#fff'
+              color: '#fff',
             }}
-            formatter={(value) => [`$${value.toFixed(2)}`, 'Price']}
+            formatter={(value, name) => [formatCurrency(Number(value)), name === 'close' ? 'Close' : name]}
           />
-          <Line 
-            type="monotone" 
-            dataKey="price" 
+          <Line
+            type="monotone"
+            dataKey="close"
             stroke={lineColor}
             strokeWidth={2}
             dot={false}

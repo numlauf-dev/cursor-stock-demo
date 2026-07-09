@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import Button from '../atoms/Button'
 import Input from '../atoms/Input'
-import { formatCurrency } from '../../utils/calculations'
+import { formatCurrency, formatNumber } from '../../utils/calculations'
+
+const parseQuantity = (value) => {
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
 
 const TradeModal = ({ 
   isOpen, 
@@ -19,7 +24,7 @@ const TradeModal = ({
   if (!isOpen) return null
 
   const isBuy = type === 'BUY'
-  const quantityNum = parseInt(quantity) || 0
+  const quantityNum = parseQuantity(quantity)
   const total = quantityNum * currentPrice
 
   const handleQuantityChange = (e) => {
@@ -27,7 +32,11 @@ const TradeModal = ({
     setQuantity(value)
     setError('')
 
-    const num = parseInt(value)
+    if (value.trim() === '') {
+      return
+    }
+
+    const num = parseQuantity(value)
     if (num <= 0) {
       setError('Quantity must be greater than 0')
       return
@@ -84,7 +93,7 @@ const TradeModal = ({
           {!isBuy && (
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Available Shares</div>
-              <div className="text-white text-xl font-bold">{availableShares}</div>
+              <div className="text-white text-xl font-bold">{formatNumber(availableShares)}</div>
             </div>
           )}
 
@@ -102,9 +111,9 @@ const TradeModal = ({
             label="Quantity"
             value={quantity}
             onChange={handleQuantityChange}
-            placeholder="Enter number of shares"
-            min="1"
-            step="1"
+            placeholder="Enter shares (for example 1.5)"
+            min="0.01"
+            step="0.01"
             error={error}
           />
 

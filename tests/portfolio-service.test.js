@@ -86,6 +86,27 @@ describe('portfolioService', () => {
     });
   });
 
+  it('supports fractional buys and sells without truncating the quantity', async () => {
+    const user = await createTestUser();
+
+    await portfolioService.buyStock(user.id, 'AAPL', 1.5, 100);
+    const averagedBuy = await portfolioService.buyStock(user.id, 'AAPL', 0.5, 130);
+    const sellResult = await portfolioService.sellStock(user.id, 'AAPL', 0.75, 140);
+
+    expect(averagedBuy.holding.quantity).toBeCloseTo(2);
+    expect(averagedBuy.holding.avgPrice).toBeCloseTo(107.5);
+    expect(sellResult.holding.quantity).toBeCloseTo(1.25);
+    expect(sellResult.holding.avgPrice).toBeCloseTo(107.5);
+    expect(sellResult.transaction).toMatchObject({
+      type: 'SELL',
+      symbol: 'AAPL',
+      quantity: 0.75,
+      price: 140,
+      total: 105,
+    });
+    expect(sellResult.portfolio.cash).toBeCloseTo(99890);
+  });
+
   it('supports partial sells without changing average price', async () => {
     const user = await createTestUser();
 

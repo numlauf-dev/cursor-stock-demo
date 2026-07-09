@@ -129,6 +129,32 @@ export const stockApi = {
     }
   },
 
+  // Get historical price data from backend so the server can
+  // decide between Finnhub candles and demo fallback history.
+  async getHistory(symbol, period = '1m') {
+    const cacheKey = `history_${symbol}_${period}`
+    const cached = getCached(cacheKey)
+    if (cached) return cached
+
+    try {
+      const response = await fetch(
+        `${BACKEND_BASE_URL}/stocks/${encodeURIComponent(symbol)}/history?period=${encodeURIComponent(period)}`
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch stock history')
+      }
+
+      const result = await response.json()
+      const history = result?.data?.history || []
+      setCache(cacheKey, history)
+      return history
+    } catch (error) {
+      console.error('Error fetching stock history:', error)
+      throw error
+    }
+  },
+
   // Search for stocks
   async searchStocks(query) {
     if (!query || query.length < 1) return []
@@ -170,71 +196,4 @@ export const stockApi = {
     }
   },
 
-  // Get historical candles
-  async getCandles(symbol, resolution = 'D', from, to) {
-    try {
-      // If no dates provided, get last 30 days
-      if (!to) to = Math.floor(Date.now() / 1000)
-      if (!from) from = to - (30 * 24 * 60 * 60)
-
-      const response = await fetch(
-        `${BASE_URL}/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${from}&to=${to}&token=${API_KEY}`
-      )
-      if (!response.ok) throw new Error('Failed to fetch candles')
-      const data = await response.json()
-      
-      if (data.s === 'no_data') {
-        return this.generateMockCandles(symbol, 30)
-      }
-
-      return {
-        timestamps: data.t,
-        open: data.o,
-        high: data.h,
-        low: data.l,
-        close: data.c,
-        volume: data.v
-      }
-    } catch (error) {
-      console.error('Error fetching candles:', error)
-      return this.generateMockCandles(symbol, 30)
-    }
-  },
-
-  // Generate mock candlestick data for demo
-  generateMockCandles(symbol, days = 30) {
-    const now = Date.now()
-    const dayMs = 24 * 60 * 60 * 1000
-    const basePrice = 150
-    
-    const timestamps = []
-    const open = []
-    const high = []
-    const low = []
-    const close = []
-    const volume = []
-
-    let currentPrice = basePrice
-
-    for (let i = days - 1; i >= 0; i--) {
-      const timestamp = Math.floor((now - (i * dayMs)) / 1000)
-      const volatility = 5
-      
-      const openPrice = currentPrice
-      const closePrice = openPrice + (Math.random() - 0.5) * volatility
-      const highPrice = Math.max(openPrice, closePrice) + Math.random() * 2
-      const lowPrice = Math.min(openPrice, closePrice) - Math.random() * 2
-      
-      timestamps.push(timestamp)
-      open.push(openPrice)
-      high.push(highPrice)
-      low.push(lowPrice)
-      close.push(closePrice)
-      volume.push(Math.floor(Math.random() * 10000000))
-      
-      currentPrice = closePrice
-    }
-
-    return { timestamps, open, high, low, close, volume }
-  }
 }

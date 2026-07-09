@@ -20,7 +20,7 @@ const TradingPanel = ({ symbol, currentPrice }) => {
     if (result.success) {
       setNotification({
         type: 'success',
-        message: `Successfully ${tradeType === 'BUY' ? 'bought' : 'sold'} ${quantity} shares of ${symbol}`
+        message: `Successfully ${tradeType === 'BUY' ? 'bought' : 'sold'} ${formatNumber(quantity)} shares of ${symbol}`
       })
     } else {
       setNotification({
