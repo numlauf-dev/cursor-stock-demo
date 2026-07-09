@@ -1,9 +1,6 @@
-// Stock API service using Finnhub (free tier: 60 req/min)
-// Sign up at https://finnhub.io for a free API key
-
-const API_KEY = import.meta.env.VITE_FINNHUB_API_KEY || 'demo'
-const BASE_URL = 'https://finnhub.io/api/v1';
-const BACKEND_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const API_KEY = import.meta.env?.VITE_FINNHUB_API_KEY || 'demo'
+const BASE_URL = 'https://finnhub.io/api/v1'
+const BACKEND_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3000/api/v1'
 
 // Cache to reduce API calls
 const cache = new Map()
@@ -21,6 +18,60 @@ const setCache = (key, data) => {
   cache.set(key, { data, timestamp: Date.now() })
 }
 
+const roundToCents = (value) => Math.round(value * 100) / 100
+
+const getSymbolHash = (symbol) =>
+  Array.from((symbol || '').toUpperCase()).reduce(
+    (hash, character) => ((hash * 31) + character.charCodeAt(0)) % 1000003,
+    17
+  )
+
+const getDeterministicNumber = (symbol, min, max, seedOffset = 0) => {
+  const hash = (getSymbolHash(symbol) + seedOffset) % 1000
+  const ratio = hash / 999
+  return roundToCents(min + ((max - min) * ratio))
+}
+
+const mapBackendQuoteToFrontendQuote = (symbol, quote) => ({
+  symbol: quote?.symbol || symbol,
+  currentPrice: quote?.price ?? 0,
+  price: quote?.price ?? 0,
+  change: quote?.change ?? 0,
+  changePercent: quote?.changePercent ?? 0,
+  high: quote?.high ?? quote?.price ?? 0,
+  low: quote?.low ?? quote?.price ?? 0,
+  open: quote?.open ?? quote?.previousClose ?? quote?.price ?? 0,
+  previousClose: quote?.previousClose ?? quote?.price ?? 0,
+  volume: quote?.volume ?? 0,
+  latestTradingDay: quote?.latestTradingDay ?? null,
+  timestamp: Date.now()
+})
+
+const createDeterministicFallbackQuote = (symbol) => {
+  const currentPrice = getDeterministicNumber(symbol, 140, 240)
+  const changePercent = getDeterministicNumber(symbol, -2, 2, 97)
+  const change = roundToCents((currentPrice * changePercent) / 100)
+  const previousClose = roundToCents(currentPrice - change)
+  const open = roundToCents(previousClose + getDeterministicNumber(symbol, -1.5, 1.5, 193))
+  const highBase = Math.max(currentPrice, open, previousClose)
+  const lowBase = Math.min(currentPrice, open, previousClose)
+
+  return {
+    symbol,
+    currentPrice,
+    price: currentPrice,
+    change,
+    changePercent,
+    high: roundToCents(highBase + getDeterministicNumber(symbol, 0.25, 2.5, 389)),
+    low: roundToCents(Math.max(0.01, lowBase - getDeterministicNumber(symbol, 0.25, 2.5, 587))),
+    open,
+    previousClose,
+    volume: Math.round(getDeterministicNumber(symbol, 500000, 5000000, 761)),
+    latestTradingDay: null,
+    timestamp: Date.now()
+  }
+}
+
 export const stockApi = {
   // Get stock quote (current price)
   async getQuote(symbol) {
@@ -30,40 +81,27 @@ export const stockApi = {
 
     try {
       const response = await fetch(
-        `${BASE_URL}/quote?symbol=${symbol}&token=${API_KEY}`
+        `${BACKEND_BASE_URL}/stocks/${encodeURIComponent(symbol)}/quote`
       )
-      if (!response.ok) throw new Error('Failed to fetch quote')
-      const data = await response.json()
-      
-      // Transform to standardized format
-      const quote = {
-        symbol,
-        currentPrice: data.c,
-        change: data.d,
-        changePercent: data.dp,
-        high: data.h,
-        low: data.l,
-        open: data.o,
-        previousClose: data.pc,
-        timestamp: Date.now()
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch quote')
       }
-      
+
+      const result = await response.json()
+      const backendQuote = result?.data?.quote
+      if (!backendQuote) {
+        throw new Error('Quote payload missing from backend response')
+      }
+
+      const quote = mapBackendQuoteToFrontendQuote(symbol, backendQuote)
       setCache(cacheKey, quote)
       return quote
     } catch (error) {
       console.error('Error fetching quote:', error)
-      // Return mock data for demo
-      return {
-        symbol,
-        currentPrice: 150 + Math.random() * 50,
-        change: (Math.random() - 0.5) * 10,
-        changePercent: (Math.random() - 0.5) * 5,
-        high: 200,
-        low: 100,
-        open: 150,
-        previousClose: 155,
-        timestamp: Date.now()
-      }
+      const fallbackQuote = createDeterministicFallbackQuote(symbol)
+      setCache(cacheKey, fallbackQuote)
+      return fallbackQuote
     }
   },
 
@@ -196,4 +234,10 @@ export const stockApi = {
     }
   },
 
+}
+
+export const __testables = {
+  createDeterministicFallbackQuote,
+  mapBackendQuoteToFrontendQuote,
+  clearCache: () => cache.clear()
 }
