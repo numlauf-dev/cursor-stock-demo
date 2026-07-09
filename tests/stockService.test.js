@@ -188,13 +188,36 @@ describe('stockService Finnhub adapters', () => {
       timeout: 10000,
     });
     expect(Array.isArray(history)).toBe(true);
-    expect(history.length).toBeGreaterThan(0);
+    expect(history).toHaveLength(30);
     expect(history[0]).toMatchObject({
-      open: 150,
-      high: 155,
-      low: 149,
-      close: 152.5,
-      volume: 1000000,
+      open: expect.any(Number),
+      high: expect.any(Number),
+      low: expect.any(Number),
+      close: expect.any(Number),
+      volume: expect.any(Number),
+    });
+    expect(new Date(history[0].date).getTime()).toBeLessThan(new Date(history[history.length - 1].date).getTime());
+  });
+
+  it('returns multiple intraday points for 1d fallback history', async () => {
+    axiosGetMock.mockResolvedValue({
+      data: {
+        s: 'no_data',
+      },
+    });
+
+    const history = await getStockHistory('AAPL', '1d');
+
+    expect(history).toHaveLength(7);
+    history.forEach((candle) => {
+      expect(candle).toMatchObject({
+        date: expect.any(String),
+        open: expect.any(Number),
+        high: expect.any(Number),
+        low: expect.any(Number),
+        close: expect.any(Number),
+        volume: expect.any(Number),
+      });
     });
   });
 

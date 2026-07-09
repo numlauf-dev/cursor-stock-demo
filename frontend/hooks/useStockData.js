@@ -172,33 +172,57 @@ export const useStockSearch = () => {
   return { results, loading, error, search }
 }
 
-export const useStockCandles = (symbol, resolution = 'D', days = 30) => {
-  const [candles, setCandles] = useState(null)
+export const useStockHistory = (symbol, period = '1m') => {
+  const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  useEffect(() => {
-    if (!symbol) return
-
-    const fetchCandles = async () => {
-      try {
-        setError(null)
-        setLoading(true)
-        const to = Math.floor(Date.now() / 1000)
-        const from = to - (days * 24 * 60 * 60)
-        const data = await stockApi.getCandles(symbol, resolution, from, to)
-        setCandles(data)
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
+  const fetchHistory = useCallback(async () => {
+    if (!symbol) {
+      setHistory([])
+      setLoading(false)
+      setError(null)
+      return
     }
 
-    fetchCandles()
-  }, [symbol, resolution, days])
+    try {
+      setError(null)
+      setLoading(true)
+      const data = await stockApi.getHistory(symbol, period)
+      setHistory(Array.isArray(data) ? data : [])
+    } catch (err) {
+      setError(err.message)
+      setHistory([])
+    } finally {
+      setLoading(false)
+    }
+  }, [symbol, period])
 
-  return { candles, loading, error }
+  useEffect(() => {
+    fetchHistory()
+  }, [fetchHistory, refreshKey])
+
+  const refresh = useCallback(() => {
+    setRefreshKey((previousKey) => previousKey + 1)
+  }, [])
+
+  return { history, loading, error, refresh }
+}
+
+export const useStockCandles = (symbol, _resolution = 'D', days = 30) => {
+  const periodByDayRange = {
+    1: '1d',
+    7: '1w',
+    30: '1m',
+    90: '3m',
+    365: '1y',
+  }
+
+  const period = periodByDayRange[days] || '1m'
+  const { history, loading, error, refresh } = useStockHistory(symbol, period)
+
+  return { candles: history, history, loading, error, refresh }
 }
 
 export const useMultipleQuotes = (symbols, refreshInterval = 5000) => {

@@ -114,6 +114,53 @@ describe('Portfolio API', () => {
     });
   });
 
+  it('preserves fractional quantities through the buy and sell API flow', async () => {
+    const firstBuy = await portfolioRequest('post', '/api/v1/portfolio/buy').send({
+      symbol: 'AAPL',
+      quantity: 1.5,
+      price: 100,
+    });
+
+    expect(firstBuy.status).toBe(200);
+    expect(firstBuy.body.data.portfolio.holdings).toEqual([
+      {
+        symbol: 'AAPL',
+        quantity: 1.5,
+        avgPrice: 100,
+      },
+    ]);
+
+    const sellResponse = await portfolioRequest('post', '/api/v1/portfolio/sell').send({
+      symbol: 'AAPL',
+      quantity: 0.25,
+      price: 140,
+    });
+
+    expect(sellResponse.status).toBe(200);
+    expect(sellResponse.body.data.portfolio.cash).toBeCloseTo(99885);
+    expect(sellResponse.body.data.portfolio.holdings).toEqual([
+      {
+        symbol: 'AAPL',
+        quantity: 1.25,
+        avgPrice: 100,
+      },
+    ]);
+    expect(sellResponse.body.data.portfolio.transactions[0]).toMatchObject({
+      type: 'SELL',
+      symbol: 'AAPL',
+      quantity: 0.25,
+      price: 140,
+      total: 35,
+    });
+    expect(sellResponse.body.data.portfolio.transactions[1]).toMatchObject({
+      type: 'BUY',
+      symbol: 'AAPL',
+      quantity: 1.5,
+      price: 100,
+      total: 150,
+    });
+  });
+
   it('migrates legacy localStorage data once and reports subsequent migrations as no-ops', async () => {
     const portfolioData = {
       cash: 99750,

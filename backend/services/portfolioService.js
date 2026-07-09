@@ -70,10 +70,10 @@ export const buyStock = async (userId, symbol, quantity, price) => {
   if (!symbol || typeof symbol !== 'string') {
     throw new ValidationError('Symbol is required');
   }
-  if (typeof quantity !== 'number' || quantity <= 0) {
+  if (!Number.isFinite(quantity) || quantity <= 0) {
     throw new ValidationError('Quantity must be greater than 0');
   }
-  if (typeof price !== 'number' || price <= 0) {
+  if (!Number.isFinite(price) || price <= 0) {
     throw new ValidationError('Price must be greater than 0');
   }
 
@@ -163,10 +163,10 @@ export const sellStock = async (userId, symbol, quantity, price) => {
   if (!symbol || typeof symbol !== 'string') {
     throw new ValidationError('Symbol is required');
   }
-  if (typeof quantity !== 'number' || quantity <= 0) {
+  if (!Number.isFinite(quantity) || quantity <= 0) {
     throw new ValidationError('Quantity must be greater than 0');
   }
-  if (typeof price !== 'number' || price <= 0) {
+  if (!Number.isFinite(price) || price <= 0) {
     throw new ValidationError('Price must be greater than 0');
   }
 
