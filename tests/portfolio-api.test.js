@@ -231,4 +231,46 @@ describe('Portfolio API', () => {
       transactions: [],
     });
   });
+
+  it('returns the reconstructed performance series from GET /api/v1/portfolio/performance', async () => {
+    await portfolioRequest('post', '/api/v1/portfolio/migrate').send({
+      portfolioData: {
+        cash: 99000,
+        holdings: [
+          {
+            symbol: 'AAPL',
+            quantity: 10,
+            avgPrice: 100,
+          },
+        ],
+        transactions: [
+          {
+            type: 'BUY',
+            symbol: 'AAPL',
+            quantity: 10,
+            price: 100,
+            total: 1000,
+            timestamp: '2024-01-10T10:00:00.000Z',
+          },
+        ],
+      },
+    });
+
+    const response = await portfolioRequest('get', '/api/v1/portfolio/performance?period=1m');
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.period).toBe('1m');
+    expect(Array.isArray(response.body.data.series)).toBe(true);
+    expect(response.body.data.series.length).toBeGreaterThan(0);
+    expect(response.body.data.series[response.body.data.series.length - 1]).toEqual(
+      expect.objectContaining({
+        date: expect.any(String),
+        totalValue: expect.any(Number),
+        cash: expect.any(Number),
+        holdingsValue: expect.any(Number),
+        pnl: expect.any(Number),
+      })
+    );
+  });
 });

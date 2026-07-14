@@ -1,4 +1,6 @@
-import { body } from 'express-validator';
+import { body, query } from 'express-validator';
+
+const PERFORMANCE_PERIODS = ['1w', '1m', '3m', '1y', 'all'];
 
 export const analyzePortfolioValidator = [
   body('holdings')
@@ -23,5 +25,12 @@ export const analyzePortfolioValidator = [
       
       return true;
     }),
+];
+
+export const getPortfolioPerformanceValidator = [
+  query('period')
+    .optional()
+    .isIn(PERFORMANCE_PERIODS)
+    .withMessage(`Period must be one of: ${PERFORMANCE_PERIODS.join(', ')}`),
 ];
 

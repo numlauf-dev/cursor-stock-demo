@@ -159,6 +159,23 @@ export const getPortfolio = async (req, res, next) => {
 };
 
 /**
+ * Get user's portfolio performance series
+ */
+export const getPortfolioPerformance = async (req, res, next) => {
+  try {
+    const { period = '1m' } = req.query;
+    const performance = await portfolioService.getPortfolioPerformance(req.user.id, period);
+
+    res.status(200).json({
+      success: true,
+      data: performance,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Buy stock
  */
 export const buyStock = async (req, res, next) => {

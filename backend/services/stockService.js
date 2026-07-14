@@ -166,6 +166,7 @@ const getMockHistoryConfig = (period) => {
     '1m': { points: 30, stepMs: 24 * 60 * 60 * 1000 },
     '3m': { points: 90, stepMs: 24 * 60 * 60 * 1000 },
     '1y': { points: 52, stepMs: 7 * 24 * 60 * 60 * 1000 },
+    all: { points: 260, stepMs: 7 * 24 * 60 * 60 * 1000 },
   };
 
   return periodConfig[period] || periodConfig['1m'];
@@ -274,6 +275,7 @@ const getFinnhubHistoryParams = (period) => {
     '1m': { from: now - (30 * day), resolution: 'D' },
     '3m': { from: now - (90 * day), resolution: 'D' },
     '1y': { from: now - (365 * day), resolution: 'W' },
+    all: { from: now - ((365 * 10) * day), resolution: 'W' },
   };
 
   const { from, resolution } = periodToRange[period] || periodToRange['1m'];
@@ -577,6 +579,7 @@ export const getStockHistory = async (symbol, period = '1m') => {
       '1m': 'TIME_SERIES_DAILY',
       '3m': 'TIME_SERIES_DAILY',
       '1y': 'TIME_SERIES_DAILY',
+      all: 'TIME_SERIES_DAILY',
     };
 
     const functionName = functionMap[period] || 'TIME_SERIES_DAILY';
@@ -603,7 +606,7 @@ export const getStockHistory = async (symbol, period = '1m') => {
         function: functionName,
         symbol: normalizedSymbol,
         ...(functionName === 'TIME_SERIES_INTRADAY' && { interval: '60min' }),
-        outputsize: period === '1y' ? 'full' : 'compact',
+        outputsize: period === '1y' || period === 'all' ? 'full' : 'compact',
       }, apiKey);
 
       const timeSeriesKey = Object.keys(data).find((key) => key.includes('Time Series'));

@@ -221,6 +221,19 @@ describe('stockService Finnhub adapters', () => {
     });
   });
 
+  it('supports all-time fallback history for longer-lived portfolio charts', async () => {
+    axiosGetMock.mockResolvedValue({
+      data: {
+        s: 'no_data',
+      },
+    });
+
+    const history = await getStockHistory('AAPL', 'all');
+
+    expect(history).toHaveLength(260);
+    expect(new Date(history[0].date).getTime()).toBeLessThan(new Date(history[history.length - 1].date).getTime());
+  });
+
   it('rejects unusable Finnhub quote payloads', () => {
     expect(() => formatFinnhubQuote('AAPL', { c: 0 })).toThrow('Stock quote not found for symbol: AAPL');
   });
