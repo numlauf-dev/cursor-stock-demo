@@ -5,6 +5,7 @@ describe('portfolioService', () => {
   let prisma;
   let portfolioService;
   const createdUserIds = [];
+  const FIXED_NOW = new Date('2024-01-31T12:00:00.000Z');
 
   const createTestUser = async () => {
     const user = await prisma.user.create({
@@ -213,5 +214,184 @@ describe('portfolioService', () => {
     expect(secondMigration).toBeNull();
     expect(afterSecondMigration.holdings).toHaveLength(1);
     expect(afterSecondMigration.transactions).toHaveLength(1);
+  });
+
+  it('returns an empty performance series when the portfolio has no transactions', async () => {
+    const user = await createTestUser();
+
+    const performance = await portfolioService.getPortfolioPerformance(user.id, '1m', {
+      now: FIXED_NOW,
+      getHistory: async () => [],
+    });
+
+    expect(performance).toEqual({
+      period: '1m',
+      series: [],
+    });
+  });
+
+  it('reconstructs a single buy and shows the portfolio value rising after the trade date', async () => {
+    const user = await createTestUser();
+    await portfolioService.migrateLocalStorageData(user.id, {
+      cash: 99000,
+      holdings: [
+        { symbol: 'AAPL', quantity: 10, avgPrice: 100 },
+      ],
+      transactions: [
+        {
+          type: 'BUY',
+          symbol: 'AAPL',
+          quantity: 10,
+          price: 100,
+          total: 1000,
+          timestamp: '2024-01-10T10:00:00.000Z',
+        },
+      ],
+    });
+
+    const performance = await portfolioService.getPortfolioPerformance(user.id, '1m', {
+      now: FIXED_NOW,
+      getHistory: async () => [
+        { date: '2024-01-10T00:00:00.000Z', close: 110 },
+        { date: '2024-01-11T00:00:00.000Z', close: 112 },
+      ],
+    });
+
+    const beforeBuy = performance.series.find((point) => point.date.startsWith('2024-01-09'));
+    const buyDay = performance.series.find((point) => point.date.startsWith('2024-01-10'));
+
+    expect(beforeBuy).toMatchObject({
+      totalValue: 100000,
+      cash: 100000,
+      holdingsValue: 0,
+      pnl: 0,
+    });
+    expect(buyDay).toMatchObject({
+      totalValue: 100100,
+      cash: 99000,
+      holdingsValue: 1100,
+      pnl: 100,
+    });
+  });
+
+  it('reconstructs cash and holdings correctly after a buy followed by a sell', async () => {
+    const user = await createTestUser();
+    await portfolioService.migrateLocalStorageData(user.id, {
+      cash: 99600,
+      holdings: [
+        { symbol: 'AAPL', quantity: 6, avgPrice: 100 },
+      ],
+      transactions: [
+        {
+          type: 'BUY',
+          symbol: 'AAPL',
+          quantity: 10,
+          price: 100,
+          total: 1000,
+          timestamp: '2024-01-10T10:00:00.000Z',
+        },
+        {
+          type: 'SELL',
+          symbol: 'AAPL',
+          quantity: 4,
+          price: 150,
+          total: 600,
+          timestamp: '2024-01-20T10:00:00.000Z',
+        },
+      ],
+    });
+
+    const performance = await portfolioService.getPortfolioPerformance(user.id, '1m', {
+      now: FIXED_NOW,
+      getHistory: async () => [
+        { date: '2024-01-10T00:00:00.000Z', close: 100 },
+        { date: '2024-01-20T00:00:00.000Z', close: 150 },
+      ],
+    });
+
+    const buyDay = performance.series.find((point) => point.date.startsWith('2024-01-10'));
+    const sellDay = performance.series.find((point) => point.date.startsWith('2024-01-20'));
+
+    expect(buyDay).toMatchObject({
+      totalValue: 100000,
+      cash: 99000,
+      holdingsValue: 1000,
+      pnl: 0,
+    });
+    expect(sellDay).toMatchObject({
+      totalValue: 100500,
+      cash: 99600,
+      holdingsValue: 900,
+      pnl: 500,
+    });
+  });
+
+  it('filters performance samples to the requested period while replaying older transactions into the opening state', async () => {
+    const user = await createTestUser();
+    await portfolioService.migrateLocalStorageData(user.id, {
+      cash: 99000,
+      holdings: [
+        { symbol: 'AAPL', quantity: 10, avgPrice: 100 },
+      ],
+      transactions: [
+        {
+          type: 'BUY',
+          symbol: 'AAPL',
+          quantity: 10,
+          price: 100,
+          total: 1000,
+          timestamp: '2023-12-20T10:00:00.000Z',
+        },
+      ],
+    });
+
+    const performance = await portfolioService.getPortfolioPerformance(user.id, '1w', {
+      now: FIXED_NOW,
+      getHistory: async () => [
+        { date: '2024-01-25T00:00:00.000Z', close: 120 },
+        { date: '2024-01-31T00:00:00.000Z', close: 125 },
+      ],
+    });
+
+    expect(performance.period).toBe('1w');
+    expect(performance.series).toHaveLength(7);
+    expect(performance.series[0].date).toBe('2024-01-25T23:59:59.999Z');
+    expect(performance.series[0]).toMatchObject({
+      cash: 99000,
+      holdingsValue: 1200,
+      totalValue: 100200,
+    });
+  });
+
+  it('uses a deterministic fallback price when historical candles are unavailable', async () => {
+    const user = await createTestUser();
+    await portfolioService.migrateLocalStorageData(user.id, {
+      cash: 99900,
+      holdings: [
+        { symbol: 'MSFT', quantity: 1, avgPrice: 100 },
+      ],
+      transactions: [
+        {
+          type: 'BUY',
+          symbol: 'MSFT',
+          quantity: 1,
+          price: 100,
+          total: 100,
+          timestamp: '2024-01-30T10:00:00.000Z',
+        },
+      ],
+    });
+
+    const firstPerformance = await portfolioService.getPortfolioPerformance(user.id, '1w', {
+      now: FIXED_NOW,
+      getHistory: async () => [],
+    });
+    const secondPerformance = await portfolioService.getPortfolioPerformance(user.id, '1w', {
+      now: FIXED_NOW,
+      getHistory: async () => [],
+    });
+
+    expect(firstPerformance.series).toEqual(secondPerformance.series);
+    expect(firstPerformance.series[firstPerformance.series.length - 1].holdingsValue).toBeGreaterThan(0);
   });
 });

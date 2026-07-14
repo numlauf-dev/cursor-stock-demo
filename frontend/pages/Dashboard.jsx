@@ -1,6 +1,7 @@
 import { usePortfolio } from '../context/PortfolioContext'
 import { useWatchlist } from '../context/WatchlistContext'
 import PortfolioSummary from '../components/organisms/PortfolioSummary'
+import PortfolioPerformanceChart from '../components/organisms/PortfolioPerformanceChart'
 import HoldingsTable from '../components/organisms/HoldingsTable'
 import WatchlistHighlights from '../components/organisms/WatchlistHighlights'
 import WatchlistNewsPanel from '../components/organisms/WatchlistNewsPanel'
@@ -28,6 +29,7 @@ const Dashboard = () => {
 
       <div className="space-y-8">
         <PortfolioSummary />
+        <PortfolioPerformanceChart />
         
         <WatchlistHighlights />
         <WatchlistNewsPanel

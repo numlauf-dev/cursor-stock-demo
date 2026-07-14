@@ -1,8 +1,17 @@
 import prisma from '../config/database.js';
+import * as stockService from './stockService.js';
 import { ValidationError } from '../utils/errors.js';
 
-const INITIAL_CASH = 100000;
+export const INITIAL_CASH = 100000;
 const PORTFOLIO_TRANSACTION_TYPES = new Set(['BUY', 'SELL']);
+const DAY_MS = 24 * 60 * 60 * 1000;
+const PERFORMANCE_PERIODS = {
+  '1w': { stepDays: 1, rangeDays: 7, historyPeriod: '1w' },
+  '1m': { stepDays: 1, rangeDays: 30, historyPeriod: '1m' },
+  '3m': { stepDays: 1, rangeDays: 90, historyPeriod: '3m' },
+  '1y': { stepDays: 7, rangeDays: 365, historyPeriod: '1y' },
+  all: { stepDays: 7, rangeDays: null, historyPeriod: 'all' },
+};
 
 const normalizeMigratedHolding = (holding) => ({
   symbol: holding.symbol?.trim().toUpperCase(),
@@ -22,6 +31,148 @@ const normalizeMigratedTransaction = (transaction) => {
     total: Number(transaction.total) || quantity * price,
     timestamp: transaction.timestamp ? new Date(transaction.timestamp) : new Date(),
   };
+};
+
+const roundCurrency = (value) => Number(value.toFixed(2));
+
+const startOfUtcDay = (date) => {
+  const normalized = new Date(date);
+  normalized.setUTCHours(0, 0, 0, 0);
+  return normalized;
+};
+
+const endOfUtcDay = (date) => {
+  const normalized = new Date(date);
+  normalized.setUTCHours(23, 59, 59, 999);
+  return normalized;
+};
+
+const resolvePerformancePeriod = (period = '1m') => (
+  PERFORMANCE_PERIODS[period] ? period : '1m'
+);
+
+const buildPerformanceSampleDates = ({ period, firstTransactionAt, portfolioCreatedAt, now }) => {
+  const config = PERFORMANCE_PERIODS[period];
+  const normalizedNow = new Date(now);
+  const endDate = new Date(normalizedNow);
+
+  let startDate;
+  if (period === 'all') {
+    startDate = startOfUtcDay(firstTransactionAt || portfolioCreatedAt || normalizedNow);
+  } else {
+    startDate = startOfUtcDay(
+      new Date(normalizedNow.getTime() - ((config.rangeDays - 1) * DAY_MS))
+    );
+  }
+
+  if (startDate.getTime() > endDate.getTime()) {
+    return [];
+  }
+
+  const sampleDates = [];
+  let cursor = new Date(startDate);
+
+  while (cursor.getTime() <= endDate.getTime()) {
+    const sampleDate = endOfUtcDay(cursor);
+    sampleDates.push(
+      new Date(Math.min(sampleDate.getTime(), endDate.getTime()))
+    );
+    cursor = new Date(cursor.getTime() + (config.stepDays * DAY_MS));
+  }
+
+  const lastSampleDate = sampleDates[sampleDates.length - 1];
+  if (!lastSampleDate || lastSampleDate.getTime() !== endDate.getTime()) {
+    sampleDates.push(endDate);
+  }
+
+  return sampleDates;
+};
+
+const applyTransactionToState = (state, transaction) => {
+  const symbol = transaction.symbol.toUpperCase();
+  const existingHolding = state.holdings.get(symbol);
+
+  if (transaction.type === 'BUY') {
+    if (existingHolding) {
+      const totalQuantity = existingHolding.quantity + transaction.quantity;
+      const totalCost = (
+        existingHolding.quantity * existingHolding.avgPrice
+      ) + transaction.total;
+
+      state.holdings.set(symbol, {
+        quantity: totalQuantity,
+        avgPrice: totalCost / totalQuantity,
+      });
+    } else {
+      state.holdings.set(symbol, {
+        quantity: transaction.quantity,
+        avgPrice: transaction.price,
+      });
+    }
+
+    state.cash -= transaction.total;
+    return;
+  }
+
+  if (!existingHolding) {
+    return;
+  }
+
+  const remainingQuantity = existingHolding.quantity - transaction.quantity;
+  state.cash += transaction.total;
+
+  if (remainingQuantity > 0) {
+    state.holdings.set(symbol, {
+      quantity: remainingQuantity,
+      avgPrice: existingHolding.avgPrice,
+    });
+  } else {
+    state.holdings.delete(symbol);
+  }
+};
+
+const buildHistoryTracker = (history = []) => ({
+  candles: [...history]
+    .filter((candle) => candle?.date && Number.isFinite(Number(candle.close)))
+    .map((candle) => ({
+      time: new Date(candle.date).getTime(),
+      close: Number(candle.close),
+    }))
+    .filter((candle) => Number.isFinite(candle.time))
+    .sort((left, right) => left.time - right.time),
+  index: -1,
+  lastClose: null,
+});
+
+export const getDeterministicFallbackPrice = (symbol, date, anchorPrice = 100) => {
+  const normalizedSymbol = symbol.toUpperCase();
+  const basePrice = Number.isFinite(anchorPrice) && anchorPrice > 0
+    ? anchorPrice
+    : 100;
+  const dayIndex = Math.floor(startOfUtcDay(date).getTime() / DAY_MS);
+  const symbolSeed = [...normalizedSymbol].reduce(
+    (seed, character) => seed + character.charCodeAt(0),
+    0
+  );
+  const trend = (((dayIndex + symbolSeed) % 29) - 14) * 0.0025;
+  const cycle = Math.sin((dayIndex + symbolSeed) / 8) * 0.03;
+  return roundCurrency(Math.max(1, basePrice * (1 + trend + cycle)));
+};
+
+const advanceHistoryTracker = (tracker, sampleTimestamp) => {
+  if (!tracker) {
+    return null;
+  }
+
+  while (
+    tracker.index + 1 < tracker.candles.length &&
+    tracker.candles[tracker.index + 1].time <= sampleTimestamp
+  ) {
+    tracker.index += 1;
+    tracker.lastClose = tracker.candles[tracker.index].close;
+  }
+
+  return tracker.lastClose;
 };
 
 /**
@@ -61,6 +212,96 @@ export const getOrCreatePortfolio = async (userId) => {
  */
 export const getUserPortfolio = async (userId) => {
   return getOrCreatePortfolio(userId);
+};
+
+/**
+ * Reconstruct portfolio performance over time from transactions and historical prices.
+ */
+export const getPortfolioPerformance = async (
+  userId,
+  period = '1m',
+  {
+    now = new Date(),
+    getHistory = stockService.getStockHistory,
+  } = {}
+) => {
+  const resolvedPeriod = resolvePerformancePeriod(period);
+  const portfolio = await getOrCreatePortfolio(userId);
+  const transactions = await prisma.transaction.findMany({
+    where: { portfolioId: portfolio.id },
+    orderBy: { timestamp: 'asc' },
+  });
+
+  if (transactions.length === 0) {
+    return {
+      period: resolvedPeriod,
+      series: [],
+    };
+  }
+
+  const sampleDates = buildPerformanceSampleDates({
+    period: resolvedPeriod,
+    firstTransactionAt: transactions[0].timestamp,
+    portfolioCreatedAt: portfolio.createdAt,
+    now,
+  });
+  const symbols = [...new Set(transactions.map((transaction) => transaction.symbol.toUpperCase()))];
+  const historyPeriod = PERFORMANCE_PERIODS[resolvedPeriod].historyPeriod;
+  const historyEntries = await Promise.all(
+    symbols.map(async (symbol) => {
+      try {
+        const history = await getHistory(symbol, historyPeriod);
+        return [symbol, buildHistoryTracker(history)];
+      } catch (_error) {
+        return [symbol, buildHistoryTracker([])];
+      }
+    })
+  );
+  const historyTrackers = new Map(historyEntries);
+  const state = {
+    cash: INITIAL_CASH,
+    holdings: new Map(),
+  };
+  const series = [];
+  let transactionIndex = 0;
+
+  for (const sampleDate of sampleDates) {
+    const sampleTimestamp = sampleDate.getTime();
+
+    while (
+      transactionIndex < transactions.length &&
+      new Date(transactions[transactionIndex].timestamp).getTime() <= sampleTimestamp
+    ) {
+      applyTransactionToState(state, transactions[transactionIndex]);
+      transactionIndex += 1;
+    }
+
+    let holdingsValue = 0;
+    for (const [symbol, holding] of state.holdings.entries()) {
+      const tracker = historyTrackers.get(symbol);
+      const historicalClose = advanceHistoryTracker(tracker, sampleTimestamp);
+      const valuationPrice = historicalClose ?? getDeterministicFallbackPrice(
+        symbol,
+        sampleDate,
+        holding.avgPrice
+      );
+      holdingsValue += holding.quantity * valuationPrice;
+    }
+
+    const totalValue = state.cash + holdingsValue;
+    series.push({
+      date: sampleDate.toISOString(),
+      totalValue: roundCurrency(totalValue),
+      cash: roundCurrency(state.cash),
+      holdingsValue: roundCurrency(holdingsValue),
+      pnl: roundCurrency(totalValue - INITIAL_CASH),
+    });
+  }
+
+  return {
+    period: resolvedPeriod,
+    series,
+  };
 };
 
 /**

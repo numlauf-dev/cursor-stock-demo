@@ -223,6 +223,11 @@ export const api = {
     return result;
   },
 
+  async getPortfolioPerformance(period = '1m') {
+    const result = await apiRequest(`/portfolio/performance?period=${encodeURIComponent(period)}`);
+    return result.data;
+  },
+
   // Watchlist endpoints
   async getWatchlists() {
     const result = await apiRequest('/watchlists');
