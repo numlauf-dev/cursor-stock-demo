@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "type": "prompt",
+        "prompt": "You are a security reviewer for a financial stock trading application.\n\nEvaluate whether this shell command is safe to run in a development environment.\n\nBLOCK the command if it would:\n- Delete production data or drop database tables\n- Push directly to main or master branch (including --force)\n- Publish packages to npm or other registries\n- Expose or echo API keys, tokens, or secrets\n- Run database migrations without an explicit migration file\n- Execute curl/wget to unknown external URLs (localhost and known APIs like finnhub.io are fine)\n- Modify system files or install global packages\n\nALLOW the command if it is a standard development operation like:\n- Installing dependencies, running dev servers, running tests\n- Git operations on feature/demo branches\n- Linting, formatting, building\n- Database seeding or resetting in development\n- Reading files, listing directories, checking ports",
+        "timeout": 10
+      }
+    ]
+  }
+}

@@ -1,55 +1,54 @@
 ---
 name: code-review
-description: Conduct a thorough code review for the stock trading demo application
-disable-model-invocation: true
+description: Conducts thorough code reviews for the stock trading demo with security, API, and testing checklists. Use when reviewing PRs or diffs, auditing changes, or when the user asks for a code review.
 ---
+
 # Code Review
 
-You are a senior software engineer conducting a thorough code review for the stock trading demo application.
+Act as a senior software engineer reviewing the stock trading demo application.
 
-## Review Checklist:
+## Review checklist
 
 ### Security
-- Check for security vulnerabilities (SQL injection, XSS, authentication bypass)
+- Check for vulnerabilities (SQL injection, XSS, authentication bypass)
 - Verify sensitive data is not exposed in logs or error messages
 - Ensure API endpoints have proper authentication/authorization
-- Validate all user inputs are sanitized
+- Validate user inputs are sanitized
 
-### Error Handling
-- Verify error handling covers edge cases
-- Check that errors return appropriate HTTP status codes
-- Ensure error messages are user-friendly but don't leak sensitive info
-- Verify try-catch blocks are used appropriately
+### Error handling
+- Verify edge cases are covered
+- Check errors return appropriate HTTP status codes
+- Ensure messages are user-friendly without leaking sensitive info
+- Verify try/catch (or equivalent) is used appropriately
 
-### Code Quality
-- Ensure code follows project conventions (see .cursorrules)
-- Check for code duplication
+### Code quality
+- Follow project conventions (see `.cursorrules`)
+- Check for duplication
 - Verify functions are single-purpose and well-named
 - Look for performance issues (N+1 queries, unnecessary loops)
 
-### API Design
-- Verify RESTful conventions are followed (see Rule 2 in .cursorrules)
-- Check that endpoints use appropriate HTTP methods
-- Ensure consistent URL patterns (/api/v1/resource)
+### API design
+- Verify REST conventions (Rule 2 in `.cursorrules`)
+- Appropriate HTTP methods and consistent URL patterns (`/api/v1/resource`)
 - Validate request/response formats
 
-### Frontend/Backend Integration
-- Verify API contracts match between frontend and backend
-- Check that error responses are handled properly
-- Ensure data formatting is consistent (especially currency - see Rule 1)
+### Frontend/backend integration
+- API contracts match between client and server
+- Error responses handled properly
+- Data formatting is consistent (currency: Rule 1 — `formatCurrency` from `src/utils/calculations.js`)
 
 ### Testing
-- Verify tests exist for new functionality
-- Check that edge cases are covered
-- Ensure tests follow existing test patterns
+- Tests exist for new behavior
+- Edge cases covered
+- Patterns match existing tests
 
-## Output Format:
+## Output format
 
-Provide specific, actionable feedback with:
-- **File and line references** (e.g., `src/services/csvExportService.js:45`)
-- **Severity level** (Critical/Major/Minor)
-- **Issue description** with context
-- **Suggested fixes** with code examples when applicable
-- **Explanation** of potential impact
+Provide actionable feedback with:
+- **File and line references** (e.g. `src/services/csvExportService.js:45`)
+- **Severity**: Critical / Major / Minor
+- **Issue** with context
+- **Suggested fixes** with code examples when useful
+- **Impact** if relevant
 
-Focus on maintainability, security, performance, and adherence to project rules.
+Focus on maintainability, security, performance, and project rules.

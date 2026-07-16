@@ -1,37 +1,35 @@
 ---
 name: validate-implementation
-description: Review the implementation to ensure it matches requirements and project standards
-disable-model-invocation: true
+description: Validates that an implementation matches requirements and project standards before sign-off. Use after finishing a feature, when checking a plan against code, or when the user asks to validate an implementation.
 ---
+
 # Validate Implementation
 
-Review the implementation to ensure it matches the requirements and follows project standards.
+Review the implementation against requirements and project standards.
 
-## Validation Checklist:
+## Validation checklist
 
-### Requirements Coverage
-- Verify all requirements from the plan are implemented
-- Check that edge cases are handled
-- Ensure user stories/acceptance criteria are met
+### Requirements coverage
+- All plan/ticket requirements are implemented
+- Edge cases handled
+- User stories / acceptance criteria met
 
-### Project Standards
-- Verify code follows .cursorrules (currency formatting, REST conventions)
-- Check naming conventions match project style
-- Ensure file structure follows project organization
+### Project standards
+- Follows `.cursorrules` (currency via `formatCurrency`, REST conventions)
+- Naming and file organization match the project
 
 ### Integration
-- Verify new code integrates properly with existing codebase
-- Check that dependencies are properly imported
-- Ensure no breaking changes to existing functionality
+- New code fits the existing codebase
+- Dependencies imported correctly
+- No unintended breaking changes
 
 ### Documentation
-- Verify code has appropriate comments
-- Check that complex logic is explained
-- Ensure API endpoints are documented
+- Comments where complexity warrants them
+- API changes documented as appropriate for this repo
 
-## Output Format:
+## Output format
 
-- **Status**: ✅ Complete / ⚠️ Needs Work / ❌ Missing
-- **Requirements**: List which requirements are met/missing
-- **Issues Found**: Specific problems with file references
-- **Recommendations**: What needs to be fixed or improved
+- **Status**: Complete / Needs work / Missing (use clear labels; emoji optional)
+- **Requirements**: Which are met vs missing
+- **Issues**: Specific problems with file references
+- **Recommendations**: What to fix or improve
