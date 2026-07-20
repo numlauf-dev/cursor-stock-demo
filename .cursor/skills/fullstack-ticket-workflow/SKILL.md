@@ -1,6 +1,6 @@
 ---
 name: fullstack-ticket-workflow
-description: Orchestrates a full-stack ticket workflow for the stock demo (pasted ticket supported; Jira/Linear optional): fetch ticket context, create an implementation checklist and unified plan, then run a single-ticket pipeline — one fullstack implementer followed by a parallel review/test/security pass. Use when the user wants to plan and execute a ticket end-to-end.
+description: "Orchestrates a full-stack ticket workflow for the stock demo (pasted ticket supported; Jira/Linear optional): fetch ticket context, create an implementation checklist and unified plan, then run a single-ticket pipeline of one fullstack implementer followed by a parallel review/test/security pass. Use when the user wants to plan and execute a ticket end-to-end."
 ---
 
 # Fullstack Ticket Workflow
