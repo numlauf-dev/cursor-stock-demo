@@ -1,29 +1,30 @@
 ---
 name: create-implementation-checklist
-description: Builds a structured implementation checklist from a Linear issue for plan mode, using ticket context and codebase analysis. Use when planning work from a ticket ID or URL, or when the user asks for an implementation checklist from Linear.
+description: Builds a structured implementation checklist from a ticket (pasted content or, if available, a Linear ID/URL) for plan mode, using ticket context and codebase analysis. Use when planning work from a ticket ID or URL, pasted ticket details, or when the user asks for an implementation checklist.
 ---
 
 # Create Implementation Checklist
 
-Analyze a Linear issue and produce a structured implementation checklist suitable for plan mode.
+Analyze a ticket and produce a structured implementation checklist suitable for plan mode. The ticket can come from pasted content or, when available, the Linear MCP.
 
 ## Instructions
 
-1. **Parse the ticket reference** from the user input (e.g. `PROJ-123`, `LIN-456`, or a full Linear URL).
+1. **Resolve the ticket source** (in this order):
+   - **Pasted content** — If the user pasted ticket details (title, description, acceptance criteria, comments), use them directly. This is the primary path in environments without a Linear connection.
+   - **Linear MCP (optional fast path)** — Else, if the user gave a Linear ID/URL (e.g. `PROJ-123`, `LIN-456`, or a full Linear URL) **and** the `user-linear` MCP server is available:
+     - Read tool schemas before calling if parameters are unclear.
+     - `get_issue` with `id`, `includeRelations: true` — title, full description, acceptance criteria if in body, labels, priority, blocking/related issues.
+     - `list_comments` with `issueId` for clarifications and thread context.
+   - **Ask** — Else (a reference was given but no Linear MCP is available), ask the user to paste the ticket details (Title, Status/Priority, Description, Acceptance Criteria, Comments).
 
-2. **Fetch ticket context** via Linear MCP (`user-linear` server):
-   - Read tool schemas before calling if parameters are unclear.
-   - `get_issue` with `id`, `includeRelations: true` — title, full description, acceptance criteria if in body, labels, priority, blocking/related issues.
-   - `list_comments` with `issueId` for clarifications and thread context.
-
-3. **Analyze the codebase** for:
+2. **Analyze the codebase** for:
    - Relevant files and patterns
    - Related components or services
    - Test expectations
 
-4. **Emit the checklist** with sections: Prerequisites, Backend Implementation, Frontend Implementation, Testing, Edge Cases, Definition of Done.
+3. **Emit the checklist** with sections: Prerequisites, Backend Implementation, Frontend Implementation, Testing, Edge Cases, Definition of Done.
 
-5. **Output template** (adapt paths to this repo — `backend/`, `frontend/`, or `src/` as applicable):
+4. **Output template** (adapt paths to this repo — `backend/`, `frontend/`, or `src/` as applicable):
 
 ```markdown
 ## Implementation Checklist: [Ticket ID] - [Title]

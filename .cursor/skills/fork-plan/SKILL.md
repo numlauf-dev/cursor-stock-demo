@@ -21,7 +21,7 @@ Read the full plan file. Parse:
 
 ### 2. Identify the API Contract
 
-Scan the source plan and any linked Linear ticket for the **shared interface** between backend and frontend. This is typically:
+Scan the source plan and any linked ticket (pasted or Linear) for the **shared interface** between backend and frontend. This is typically:
 - REST endpoint path, method, query params
 - Request/response JSON schema
 - Error status codes and shapes
