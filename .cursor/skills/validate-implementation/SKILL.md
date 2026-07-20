@@ -15,7 +15,7 @@ Review the implementation against requirements and project standards.
 - User stories / acceptance criteria met
 
 ### Project standards
-- Follows `.cursorrules` (currency via `formatCurrency`, REST conventions)
+- Follows the project rules in `.cursor/rules/` (`frontend-format-currency`: currency via `formatCurrency`; `backend-rest-api`: REST conventions)
 - Naming and file organization match the project
 
 ### Integration

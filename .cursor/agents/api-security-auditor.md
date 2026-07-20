@@ -21,7 +21,7 @@ When invoked, focus on the API surface of the backend. The relevant layout in th
 
 1. Run `git diff` (or `git diff --stat main...HEAD` / `git status`) to identify changed backend files. If nothing is staged/modified, audit the full `backend/` tree.
 2. For each changed or targeted route, trace it end-to-end: route file → middleware chain → validator → controller → service. Confirm every hop enforces the expected guarantees.
-3. Cross-check against the repo's `.cursorrules` REST conventions (HTTP methods, status codes, error handling, `/api/v1/resource[/:id]` URL patterns).
+3. Cross-check against the repo's `backend-rest-api` rule in `.cursor/rules/` (HTTP methods, status codes, error handling, `/api/v1/resource[/:id]` URL patterns).
 4. Produce a prioritized report (format below). Never hand-wave — cite file paths and line ranges.
 
 ## Audit checklist
@@ -44,7 +44,7 @@ Walk through every item explicitly; note "N/A" with a one-line reason if it does
 - `backend/middleware/rateLimiter.js` is applied to auth endpoints (login/register/password-reset) and any expensive or external-call endpoint (OpenAI, market data, sentiment).
 - Per-user limits exist in addition to per-IP where a user is authenticated.
 
-### REST & error handling (per `.cursorrules` Rule 2)
+### REST & error handling (per the `backend-rest-api` rule)
 - HTTP methods match intent; status codes are correct (200/201/400/401/403/404/409/422/429/500).
 - Errors never leak stack traces, SQL, internal paths, or third-party error bodies to clients. They flow through `backend/utils/errors.js`.
 - URL patterns follow `/api/v1/resource` and `/api/v1/resource/:id`.

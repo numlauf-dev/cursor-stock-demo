@@ -9,6 +9,11 @@ alwaysApply: false
 When creating or modifying API endpoints:
 
 - Use appropriate HTTP methods (GET for reads, POST for creates, PUT/PATCH for updates, DELETE for deletes).
-- Return proper status codes: 200 OK, 201 Created, 400 Bad Request, 404 Not Found, 500 Server Error.
+- Return proper status codes for the situation:
+  - `200 OK`, `201 Created` for success.
+  - `400 Bad Request`, `422 Unprocessable Entity` for invalid input; `401 Unauthorized`, `403 Forbidden` for auth/ownership failures.
+  - `404 Not Found`, `409 Conflict`, `429 Too Many Requests` where applicable.
+  - `500 Internal Server Error` for unexpected failures.
 - Use consistent URL patterns (`/api/v1/resource`, `/api/v1/resource/:id`).
+- Return consistent JSON shapes: `{ success: true, data: ... }` on success; route errors through the shared error handler and never leak stack traces, SQL, or provider internals.
 - Include error handling with clear, actionable error messages.

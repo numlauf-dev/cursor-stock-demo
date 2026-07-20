@@ -82,7 +82,7 @@ Analyze a ticket and produce a structured implementation checklist suitable for 
 - [ ] Acceptance criteria met
 - [ ] Tests passing
 - [ ] No new lint issues
-- [ ] API follows REST conventions (`.cursorrules`)
+- [ ] API follows REST conventions (see the `backend-rest-api` rule in `.cursor/rules/`)
 - [ ] Currency display uses `formatCurrency` where applicable
 ```
 
