@@ -46,7 +46,7 @@ export const calculateHoldingPnL = (holding, currentPrice) => {
 ## Verification
 
 After injecting the bug:
-1. Start the dev servers if not running (`npm run dev` in both frontend and backend)
+1. Start the dev servers if not running (`npm run server:dev` for the backend and `npm run dev` for the frontend)
 2. Navigate to the dashboard
 3. The bug affects all holdings - P&L will show ~5% less profit than expected
 

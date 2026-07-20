@@ -1,11 +1,13 @@
 ---
 name: fullstack-ticket-workflow
-description: Orchestrates a full-stack ticket workflow for the stock demo (pasted ticket supported; Jira/Linear optional): fetch ticket context, create an implementation checklist, fork backend/frontend plans, propose parallel subagents, and pause for approval before execution. Use when the user wants to plan and parallelize a ticket end-to-end.
+description: Orchestrates a full-stack ticket workflow for the stock demo (pasted ticket supported; Jira/Linear optional): fetch ticket context, create an implementation checklist and unified plan, then run a single-ticket pipeline — one fullstack implementer followed by a parallel review/test/security pass. Use when the user wants to plan and execute a ticket end-to-end.
 ---
 
 # Fullstack Ticket Workflow
 
-Use this skill to turn a ticket into parallel-safe backend and frontend execution plans. The ticket can come from pasted content or, when available, the Jira (Atlassian) or Linear MCP. This is a planning workflow first: do not modify product code or launch implementation subagents until the user approves the generated plans.
+Use this skill to turn a ticket into an end-to-end implementation using role-based subagents. The default is a **single-ticket pipeline**: one agent implements the feature as a vertical slice, then specialist agents review, test, and security-audit the result in parallel. The ticket can come from pasted content or, when available, the Jira (Atlassian) or Linear MCP.
+
+This is a planning workflow first: do not modify product code or launch implementation subagents until the user approves the plan.
 
 ## Workflow
 
@@ -19,52 +21,56 @@ Use this skill to turn a ticket into parallel-safe backend and frontend executio
    - Analyze the repo before drafting the checklist.
    - Include prerequisites, backend work, frontend work, testing, edge cases, and definition of done.
 
-3. **Create a unified source plan**
-   - Save the unified plan to `.cursor/plans/<ticket-lowercase>.plan.md`.
-   - Include ticket summary, acceptance criteria, API contract if applicable, backend tasks, frontend tasks, test plan, and edge cases.
-   - Include YAML frontmatter compatible with `fork-plan`: `name`, `overview`, `todos`, and `isProject`.
-   - If the ticket touches both backend and frontend, define the shared API contract explicitly: method, path, query/body params, response JSON, and error states.
-   - If the API contract is ambiguous, draft a proposed contract and call it out as an assumption in the plan.
+3. **Create a unified plan**
+   - Save the plan to `.cursor/plans/<ticket-lowercase>.plan.md`.
+   - Include ticket summary, acceptance criteria, the API contract (if the feature spans API and UI), backend tasks, frontend tasks, test plan, and edge cases.
+   - Include YAML frontmatter: `name`, `overview`, `todos`, and `isProject`.
+   - Define the shared API contract explicitly — method, path, query/body params, response JSON, error states — so the single implementer builds the backend and frontend against one seam. If the contract is ambiguous, draft a proposed contract and call it out as an assumption.
 
-4. **Fork the plan**
-   - Apply `fork-plan`.
-   - Create `.cursor/plans/<ticket-lowercase>-backend.plan.md`.
-   - Create `.cursor/plans/<ticket-lowercase>-frontend.plan.md`.
-   - Ensure both child plans share the same API contract.
-   - Ensure no file paths overlap unless explicitly marked as shared.
-   - If the ticket is clearly backend-only or frontend-only, do not force a fork; create one scoped plan and explain why parallel execution is not useful.
+4. **Pause before execution**
+   - Do not launch subagents automatically.
+   - Present the ticket summary, plan path, task count, the API contract, the proposed pipeline, and any risks.
+   - Ask: `Proceed with implementation?`
 
-5. **Recommend subagents**
-   - Backend implementation: `backend-implementation`
-   - Frontend implementation: `frontend-implementer`
-   - Backend security follow-up: `api-security-auditor`
-   - Use `best-of-n-runner` only when isolated worktrees are desired.
+5. **Execute the pipeline** (only after approval)
+   - **Implement**: launch one `feature-implementer` subagent to build the whole vertical slice (backend + frontend) from the plan.
+   - **Review pass**: once implementation reports back, launch these in a single parallel tool call, since they are read-only/non-conflicting:
+     - `code-reviewer` — quality, API design, contract match, project rules.
+     - `test-engineer` — add/extend Jest/Supertest and component tests.
+     - `api-security-auditor` — focused security pass on any backend/API changes.
+   - **Resolve**: feed findings back to `feature-implementer` (or fix directly) and re-run `test-engineer` if code changed.
 
-6. **Pause before execution**
-   - Do not launch implementation subagents automatically.
-   - Present the ticket summary, generated plan paths, backend/frontend task counts, proposed subagents, shared API contract, and any shared risks.
-   - Ask: `Proceed with parallel execution?`
+6. **Validate**
+   - Apply `validate-implementation` against the plan's acceptance criteria and project standards before sign-off.
+
+## Optional parallelization patterns
+
+Use these only when they genuinely fit — the single-ticket pipeline above is the default.
+
+- **Cross-ticket fan-out** — when there are several independent tickets, launch one `feature-implementer` per ticket in parallel. Safe because each owns a different feature and touches different files. This is the realistic way to parallelize; it needs multiple tickets.
+- **Best-of-N** — for a hard or ambiguous task, launch multiple `best-of-n-runner` attempts on the same plan in isolated worktrees, then pick the best result.
+- **Layered backend/frontend fork** — only when the backend and frontend seam is genuinely clean and the contract is locked. Apply the `fork-plan` skill to split into `<ticket>-backend.plan.md` and `<ticket>-frontend.plan.md` and run two implementers. Do not use this as the default — most single tickets do not bisect cleanly.
 
 ## Execution Prompt Templates
 
 Use these prompts only after the user approves execution.
 
-Launch backend and frontend implementation subagents in a single parallel tool call when both plans exist. Keep each prompt scoped to its plan so the agents do not edit overlapping files.
-
-### Backend
+### Implement (single fullstack agent)
 
 ```md
-Execute `.cursor/plans/<ticket>-backend.plan.md`.
+Execute `.cursor/plans/<ticket>.plan.md` as a vertical slice.
 
-Stay within the backend scope. Use the `backend-implementation` agent conventions and the `scaffold-api-endpoint` skill where relevant. Do not modify frontend files. Report files changed, tests run, and any blockers.
+Use the `feature-implementer` agent conventions. Build the backend against the plan's API contract, then the frontend that consumes it. Apply the `scaffold-api-endpoint` and `scaffold-ui-component` skills where relevant. Report the API contract, files changed, how it's wired, and verification (lint/tests).
 ```
 
-### Frontend
+### Review pass (launch in parallel after implementation)
 
 ```md
-Execute `.cursor/plans/<ticket>-frontend.plan.md`.
+Review the implementation of `.cursor/plans/<ticket>.plan.md`.
 
-Stay within the frontend scope. Use the `frontend-implementer` agent conventions and the `scaffold-ui-component` skill where relevant. Do not modify backend files. Report files changed, verification run, and any blockers.
+- code-reviewer: run the code-review checklist against the diff; return prioritized findings.
+- test-engineer: add/extend tests for the new behavior; run them and report results.
+- api-security-auditor: audit any backend/API changes; return findings by severity.
 ```
 
 ## Output Format
@@ -73,22 +79,23 @@ Stay within the frontend scope. Use the `frontend-implementer` agent conventions
 ## Ticket
 <id> - <title>
 
-## Shared Contract
+## API Contract
 <method/path and short response-shape summary, or "N/A">
 
-## Plans Created
-- Unified: `.cursor/plans/...`
-- Backend: `.cursor/plans/...`
-- Frontend: `.cursor/plans/...`
+## Plan Created
+- `.cursor/plans/<ticket-lowercase>.plan.md` (<n> todos)
 
-## Proposed Parallel Execution
-- Backend: `backend-implementation`
-- Frontend: `frontend-implementer`
-- Follow-up: `api-security-auditor`
+## Proposed Pipeline
+1. Implement: `feature-implementer`
+2. Review (parallel): `code-reviewer`, `test-engineer`, `api-security-auditor`
+3. Validate: `validate-implementation`
+
+## Optional
+- <fan-out / best-of-N / layered fork, only if it fits, or "None">
 
 ## Risks / Assumptions
-- <shared dependency, unclear contract, or "None">
+- <unclear contract, shared dependency, or "None">
 
 ## Approval Needed
-Proceed with parallel execution?
+Proceed with implementation?
 ```

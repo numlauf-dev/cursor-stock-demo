@@ -1,9 +1,11 @@
 ---
 name: fork-plan
-description: Split a unified implementation plan into parallel backend and frontend plan files. Use when the user wants to fork, split, or parallelize a plan into separate BE/FE tracks, or when preparing to run backend and frontend implementation concurrently.
+description: Optional tool to split a unified implementation plan into separate backend and frontend plan files. Use ONLY when the backend/frontend seam is genuinely clean and the API contract is locked. The default ticket workflow runs a single fullstack implementer (see fullstack-ticket-workflow); reach for this only for explicit layered parallelization.
 ---
 
 # Fork Plan
+
+> Optional / advanced. The default `fullstack-ticket-workflow` builds a ticket as one vertical slice with a single `feature-implementer`, which avoids the coordination overhead of splitting a feature across two agents. Use this skill only when the backend and frontend are genuinely independent surfaces with a locked contract, and the user explicitly wants layered parallel execution. Most single tickets do not bisect cleanly — do not force a fork.
 
 Split a unified `.plan.md` into two parallel-safe plans — one backend, one frontend — that can be executed concurrently (e.g., via two `best-of-n-runner` subagents).
 
@@ -101,7 +103,7 @@ Before writing the files, verify:
 - [ ] Each plan is self-contained — an agent can execute it without reading the other plan
 - [ ] Shared prerequisites are assigned to the correct plan or duplicated with a note
 - [ ] Todo IDs are globally unique across both plans (`be-` and `fe-` prefixes)
-- [ ] Both plans reference workspace rules (Rule 1: `formatCurrency` where applicable, Rule 2: REST conventions for BE)
+- [ ] Both plans reference the project rules in `.cursor/rules/` (`frontend-format-currency`: `formatCurrency` where applicable; `backend-rest-api`: REST conventions for BE)
 
 ### 7. Write Output
 

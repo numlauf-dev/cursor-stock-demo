@@ -16,7 +16,9 @@ Store the count of command files to verify later. These files must survive the r
 - `reset-demo.md`
 - `start-demo.md`
 
-**Skills folder:** Do not delete or modify `.cursor/skills/` (e.g. `code-review`, `create-implementation-checklist`, `do-ticket`, `validate-implementation`, `fork-plan`).
+**Skills folder:** Do not delete or modify `.cursor/skills/` (e.g. `code-review`, `create-implementation-checklist`, `do-ticket`, `validate-implementation`, `fork-plan`, `fullstack-ticket-workflow`).
+
+**Agents folder:** Do not delete or modify `.cursor/agents/` (e.g. `feature-implementer`, `test-engineer`, `code-reviewer`, `api-security-auditor`).
 
 ## Task
 

@@ -22,20 +22,20 @@ Act as a senior software engineer reviewing the stock trading demo application.
 - Verify try/catch (or equivalent) is used appropriately
 
 ### Code quality
-- Follow project conventions (see `.cursorrules`)
+- Follow project conventions (see `.cursor/rules/`)
 - Check for duplication
 - Verify functions are single-purpose and well-named
 - Look for performance issues (N+1 queries, unnecessary loops)
 
 ### API design
-- Verify REST conventions (Rule 2 in `.cursorrules`)
+- Verify REST conventions (see the `backend-rest-api` rule in `.cursor/rules/`)
 - Appropriate HTTP methods and consistent URL patterns (`/api/v1/resource`)
 - Validate request/response formats
 
 ### Frontend/backend integration
 - API contracts match between client and server
 - Error responses handled properly
-- Data formatting is consistent (currency: Rule 1 — `formatCurrency` from `src/utils/calculations.js`)
+- Data formatting is consistent (currency: the `frontend-format-currency` rule — `formatCurrency` from `frontend/utils/calculations.js`)
 
 ### Testing
 - Tests exist for new behavior
