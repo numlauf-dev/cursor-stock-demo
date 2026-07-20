@@ -1,0 +1,9 @@
+---
+description: Use shared formatCurrency for all money displays in the UI
+globs: frontend/**/*.{js,jsx}
+alwaysApply: false
+---
+
+# Currency display
+
+When displaying monetary values (prices, totals, P&L), use `formatCurrency` from `frontend/utils/calculations.js` so amounts show USD with two decimal places (`$X,XXX.XX`).

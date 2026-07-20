@@ -1,235 +1,92 @@
 ---
 name: scaffold-api-endpoint
-description: Scaffold REST API endpoints following project conventions. Use when creating new API routes, endpoints, controllers, services, or when the user wants to add backend functionality.
+description: Scaffolds REST API endpoints for this Node/Express stock demo using route, controller, service, validator, middleware, and Jest test conventions. Use when adding backend functionality, creating a new API route, or modifying endpoint behavior.
 ---
 
 # Scaffold API Endpoint
 
-Creates REST API endpoints following the project's established patterns and RESTful conventions.
+Use this skill when adding or changing backend API behavior in `backend/`.
 
-## Quick Start
+## Endpoint Checklist
 
-When scaffolding an endpoint, create files in this order:
-1. **Validator** (`backend/validators/{resource}Validators.js`)
-2. **Service** (`backend/services/{resource}Service.js`)
-3. **Controller** (`backend/controllers/{resource}Controller.js`)
-4. **Routes** (`backend/routes/{resource}Routes.js`)
-5. **Register routes** in `backend/server.js`
+1. **Define the contract**
+   - HTTP method and path under `/api/v1/...`
+   - Auth requirement: public, authenticated, or ownership-protected
+   - Request params/query/body and response shape
+   - Success and error status codes
 
-## REST Conventions
+2. **Mirror nearby files**
+   - Routes: `backend/routes/*Routes.js`
+   - Controllers: `backend/controllers/*Controller.js`
+   - Services: `backend/services/*Service.js`
+   - Validators: `backend/validators/*Validators.js`
+   - Tests: `tests/*.test.js`
 
-Follow these conventions from `.cursorrules`:
+3. **Implement in dependency order**
+   - Add `express-validator` chains in `backend/validators/`
+   - Add service logic in `backend/services/`
+   - Add a thin controller in `backend/controllers/`
+   - Wire the route in `backend/routes/`
+   - Register a new route file in `backend/server.js` only when adding a new resource router
 
-| Operation | HTTP Method | URL Pattern | Status Code |
-|-----------|-------------|-------------|-------------|
-| List all | GET | `/api/v1/{resource}` | 200 |
-| Get one | GET | `/api/v1/{resource}/:id` | 200 |
-| Create | POST | `/api/v1/{resource}` | 201 |
-| Update | PUT/PATCH | `/api/v1/{resource}/:id` | 200 |
-| Delete | DELETE | `/api/v1/{resource}/:id` | 200 |
+4. **Apply middleware**
+   - Use `handleValidationErrors` after validators
+   - Use existing auth middleware for protected resources
+   - Use existing rate limiters for auth, expensive, or external-provider routes
 
-## File Templates
+5. **Return consistent JSON**
+   - Success responses use `{ success: true, data: ... }`
+   - Error responses should flow through `backend/utils/errors.js` and the global error handler
+   - Do not leak stack traces, provider credentials, SQL, or raw third-party errors
 
-### 1. Validator Template
+6. **Test the API behavior**
+   - Add or update Jest/Supertest coverage in `tests/`
+   - Cover success, validation failure, and important provider/service failure cases
+   - Assert status codes and response shape, not just that a request returns
 
-```javascript
-import { body, param, query } from 'express-validator';
+## Route Pattern
 
-export const create{Resource}Validator = [
-  body('fieldName')
+```js
+router.get(
+  '/:symbol/example',
+  stockDataLimiter,
+  getExampleValidator,
+  handleValidationErrors,
+  stockController.getExample
+);
+```
+
+## Controller Pattern
+
+```js
+export const getExample = async (req, res, next) => {
+  try {
+    const { symbol } = req.params;
+    const result = await stockService.getExample(symbol);
+
+    res.status(200).json({
+      success: true,
+      data: { result },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+```
+
+## Validator Pattern
+
+```js
+export const getExampleValidator = [
+  param('symbol')
     .trim()
     .notEmpty()
-    .withMessage('Field name is required'),
-];
-
-export const get{Resource}Validator = [
-  param('id')
-    .isInt({ min: 1 })
-    .withMessage('Valid ID is required'),
+    .withMessage('Stock symbol is required')
+    .matches(/^[A-Z0-9.]+$/i)
+    .withMessage('Invalid stock symbol format'),
 ];
 ```
 
-### 2. Service Template
+## Final Verification
 
-```javascript
-import prisma from '../config/database.js';
-import { NotFoundError, ValidationError } from '../utils/errors.js';
-import logger from '../utils/logger.js';
-
-export const getAll = async () => {
-  return prisma.{resource}.findMany();
-};
-
-export const getById = async (id) => {
-  const item = await prisma.{resource}.findUnique({ where: { id } });
-  if (!item) {
-    throw new NotFoundError('{Resource}');
-  }
-  return item;
-};
-
-export const create = async (data) => {
-  return prisma.{resource}.create({ data });
-};
-
-export const update = async (id, data) => {
-  await getById(id); // Verify exists
-  return prisma.{resource}.update({ where: { id }, data });
-};
-
-export const remove = async (id) => {
-  await getById(id); // Verify exists
-  return prisma.{resource}.delete({ where: { id } });
-};
-```
-
-### 3. Controller Template
-
-```javascript
-import * as {resource}Service from '../services/{resource}Service.js';
-
-export const getAll = async (req, res, next) => {
-  try {
-    const items = await {resource}Service.getAll();
-    res.status(200).json({
-      success: true,
-      data: { items },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const item = await {resource}Service.getById(parseInt(id));
-    res.status(200).json({
-      success: true,
-      data: { item },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const create = async (req, res, next) => {
-  try {
-    const item = await {resource}Service.create(req.body);
-    res.status(201).json({
-      success: true,
-      data: { item },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const update = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const item = await {resource}Service.update(parseInt(id), req.body);
-    res.status(200).json({
-      success: true,
-      data: { item },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const remove = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    await {resource}Service.remove(parseInt(id));
-    res.status(200).json({
-      success: true,
-      message: '{Resource} deleted successfully',
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-```
-
-### 4. Routes Template
-
-```javascript
-import express from 'express';
-import * as {resource}Controller from '../controllers/{resource}Controller.js';
-import { authenticate } from '../middleware/auth.js';
-import { handleValidationErrors } from '../middleware/validation.js';
-import {
-  create{Resource}Validator,
-  get{Resource}Validator,
-} from '../validators/{resource}Validators.js';
-
-const router = express.Router();
-
-// Apply auth to all routes (optional)
-router.use(authenticate);
-
-router.get('/', {resource}Controller.getAll);
-router.get('/:id', get{Resource}Validator, handleValidationErrors, {resource}Controller.getById);
-router.post('/', create{Resource}Validator, handleValidationErrors, {resource}Controller.create);
-router.put('/:id', get{Resource}Validator, handleValidationErrors, {resource}Controller.update);
-router.delete('/:id', get{Resource}Validator, handleValidationErrors, {resource}Controller.remove);
-
-export default router;
-```
-
-### 5. Register Routes in server.js
-
-Add to `backend/server.js`:
-
-```javascript
-import {resource}Routes from './routes/{resource}Routes.js';
-// ...
-app.use('/api/v1/{resources}', {resource}Routes);
-```
-
-## Response Format
-
-All responses follow this structure:
-
-**Success:**
-```json
-{
-  "success": true,
-  "data": { ... }
-}
-```
-
-**Error:**
-```json
-{
-  "success": false,
-  "error": "Error message"
-}
-```
-
-## Error Classes
-
-Import from `backend/utils/errors.js`:
-
-| Error Class | Status Code | Use Case |
-|-------------|-------------|----------|
-| `ValidationError` | 400 | Invalid input |
-| `UnauthorizedError` | 401 | Auth required |
-| `ForbiddenError` | 403 | No permission |
-| `NotFoundError` | 404 | Resource not found |
-| `AppError` | 500 | Server error |
-
-## Checklist
-
-Copy and track progress:
-
-```
-API Endpoint Progress:
-- [ ] Create validator with input validation rules
-- [ ] Create service with business logic
-- [ ] Create controller with request handling
-- [ ] Create routes file with REST endpoints
-- [ ] Register routes in server.js
-- [ ] Add tests to tests/ directory
-```
+Run focused tests for the changed API surface. For broad endpoint changes, run `npm test`; for quick checks during development, run the relevant Jest file when possible.

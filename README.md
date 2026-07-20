@@ -149,10 +149,6 @@ Contributions are welcome! Feel free to:
 - Suggest new features
 - Submit pull requests
 
-## 📝 License
-
-Copyright Anysphere Inc.
-
 ## 🙏 Acknowledgments
 
 - Stock data provided by [Finnhub](https://finnhub.io)

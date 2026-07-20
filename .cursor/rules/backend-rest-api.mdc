@@ -1,0 +1,14 @@
+---
+description: REST conventions for stock demo API routes and handlers
+globs: backend/**/*.js
+alwaysApply: false
+---
+
+# REST API conventions
+
+When creating or modifying API endpoints:
+
+- Use appropriate HTTP methods (GET for reads, POST for creates, PUT/PATCH for updates, DELETE for deletes).
+- Return proper status codes: 200 OK, 201 Created, 400 Bad Request, 404 Not Found, 500 Server Error.
+- Use consistent URL patterns (`/api/v1/resource`, `/api/v1/resource/:id`).
+- Include error handling with clear, actionable error messages.
