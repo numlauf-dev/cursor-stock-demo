@@ -1,18 +1,18 @@
 ---
 name: fullstack-ticket-workflow
-description: Orchestrates a full-stack ticket workflow for the stock demo (pasted ticket supported; Linear optional): fetch ticket context, create an implementation checklist, fork backend/frontend plans, propose parallel subagents, and pause for approval before execution. Use when the user wants to plan and parallelize a ticket end-to-end.
+description: Orchestrates a full-stack ticket workflow for the stock demo (pasted ticket supported; Jira/Linear optional): fetch ticket context, create an implementation checklist, fork backend/frontend plans, propose parallel subagents, and pause for approval before execution. Use when the user wants to plan and parallelize a ticket end-to-end.
 ---
 
 # Fullstack Ticket Workflow
 
-Use this skill to turn a ticket into parallel-safe backend and frontend execution plans. The ticket can come from pasted content or, when available, the Linear MCP. This is a planning workflow first: do not modify product code or launch implementation subagents until the user approves the generated plans.
+Use this skill to turn a ticket into parallel-safe backend and frontend execution plans. The ticket can come from pasted content or, when available, the Jira (Atlassian) or Linear MCP. This is a planning workflow first: do not modify product code or launch implementation subagents until the user approves the generated plans.
 
 ## Workflow
 
 1. **Fetch ticket context**
-   - Accept the ticket from pasted content, or parse a Linear ticket ID/URL from the user message.
+   - Accept the ticket from pasted content, or parse a Jira issue key/URL or Linear ID/URL from the user message.
    - If no ticket content or reference is provided, ask for one before continuing (a pasted ticket is fine).
-   - Apply the `do-ticket` workflow: resolve the ticket source (pasted content first, Linear MCP as an optional fast path) and gather details, description, comments, acceptance criteria, labels, assignee, priority, and related issues.
+   - Apply the `do-ticket` workflow: resolve the ticket source (pasted content first, then Jira/Linear MCP when available) and gather details, description, comments, acceptance criteria, labels, assignee, priority, and related issues.
 
 2. **Create an implementation checklist**
    - Apply `create-implementation-checklist`.
