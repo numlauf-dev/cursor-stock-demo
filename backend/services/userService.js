@@ -21,11 +21,17 @@ export const getOrCreateDefaultUser = async () => {
   });
 
   if (!user) {
-    // Create default user
+    // Create the default user. Use upsert so concurrent callers cannot race
+    // into a unique-constraint error on `email` — this happens when the
+    // frontend auto-calls this endpoint on load, or when parallel test
+    // workers share a database. If another caller created the user between
+    // the findUnique above and here, the where clause matches and we no-op.
     const hashedPassword = await bcrypt.hash(DEFAULT_USER_PASSWORD, 10);
-    
-    user = await prisma.user.create({
-      data: {
+
+    user = await prisma.user.upsert({
+      where: { email: DEFAULT_USER_EMAIL },
+      update: {},
+      create: {
         email: DEFAULT_USER_EMAIL,
         password: hashedPassword,
         firstName: 'Default',
