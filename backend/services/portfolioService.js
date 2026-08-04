@@ -201,9 +201,17 @@ export const sellStock = async (userId, symbol, quantity, price) => {
     // Update or delete holding
     let updatedHolding;
     if (newQuantity > 0) {
+      // Proceeds from the sold shares are already realized, so they come off the
+      // remaining position's cost basis instead of being reported again as
+      // unrealized gain on the shares the user still holds.
+      const remainingCostBasis = holding.quantity * holding.avgPrice - total;
+
       updatedHolding = await tx.holding.update({
         where: { id: holding.id },
-        data: { quantity: newQuantity },
+        data: {
+          quantity: newQuantity,
+          avgPrice: remainingCostBasis / newQuantity,
+        },
       });
     } else {
       await tx.holding.delete({
