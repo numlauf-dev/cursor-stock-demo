@@ -15,6 +15,21 @@ const HoldingsTable = () => {
   const symbols = holdings.map(h => h.symbol)
   const { quotes, loading } = useMultipleQuotes(symbols)
 
+  const totals = holdings.reduce((acc, holding) => {
+    const quote = quotes[holding.symbol]
+    const currentPrice = quote?.currentPrice || holding.avgPrice
+    const rowCostBasis = parseFloat((holding.quantity * holding.avgPrice).toFixed(2))
+    const rowMarketValue = parseFloat((holding.quantity * currentPrice).toFixed(2))
+
+    return {
+      costBasis: acc.costBasis + rowCostBasis,
+      marketValue: acc.marketValue + rowMarketValue,
+    }
+  }, { costBasis: 0, marketValue: 0 })
+
+  const totalPnL = totals.marketValue - totals.costBasis
+  const totalsArePositive = totalPnL >= 0
+
   if (holdings.length === 0) {
     return (
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-8">
@@ -101,6 +116,20 @@ const HoldingsTable = () => {
               )
             })}
           </tbody>
+          <tfoot className="bg-gray-900">
+            <tr>
+              <td className="px-6 py-4 text-sm font-semibold text-gray-300" colSpan={4}>
+                Total
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-white">
+                ${totals.marketValue.toFixed(2)}
+              </td>
+              <td className={`px-6 py-4 whitespace-nowrap text-right text-sm font-semibold ${totalsArePositive ? 'text-gain' : 'text-loss'}`}>
+                ${totalPnL.toFixed(2)}
+              </td>
+              <td className="px-6 py-4"></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
