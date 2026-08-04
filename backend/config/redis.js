@@ -51,6 +51,31 @@ export const getRedisClient = () => {
   return redisClient;
 };
 
+export const getCachedValue = async (key) => {
+  if (!redisClient) {
+    return null;
+  }
+
+  try {
+    return await redisClient.get(key);
+  } catch (error) {
+    logger.warn('Redis cache read error:', error.message);
+    return null;
+  }
+};
+
+export const setCachedValue = async (key, value, ttlSeconds) => {
+  if (!redisClient) {
+    return;
+  }
+
+  try {
+    await redisClient.setEx(key, ttlSeconds, String(value));
+  } catch (error) {
+    logger.warn('Redis cache write error:', error.message);
+  }
+};
+
 export const disconnectRedis = async () => {
   if (redisClient) {
     await redisClient.quit();

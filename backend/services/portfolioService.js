@@ -1,8 +1,12 @@
 import prisma from '../config/database.js';
+import { getCachedValue, setCachedValue } from '../config/redis.js';
 import { ValidationError } from '../utils/errors.js';
 
 const INITIAL_CASH = 100000;
 const PORTFOLIO_TRANSACTION_TYPES = new Set(['BUY', 'SELL']);
+const BUYING_POWER_TTL = 300;
+
+const buyingPowerKey = (userId) => `portfolio:buyingPower:${userId}`;
 
 const normalizeMigratedHolding = (holding) => ({
   symbol: holding.symbol?.trim().toUpperCase(),
@@ -64,6 +68,29 @@ export const getUserPortfolio = async (userId) => {
 };
 
 /**
+ * Cash available to trade with. The trade panel asks for this on every
+ * keystroke, so it is served from cache instead of a portfolio read.
+ */
+export const getBuyingPower = async (userId) => {
+  const cached = await getCachedValue(buyingPowerKey(userId));
+  if (cached !== null) {
+    return Number(cached);
+  }
+
+  const portfolio = await getOrCreatePortfolio(userId);
+  await setCachedValue(buyingPowerKey(userId), portfolio.cash, BUYING_POWER_TTL);
+
+  return portfolio.cash;
+};
+
+const applyBuyingPowerDelta = async (userId, delta, fallbackCash) => {
+  const cached = await getCachedValue(buyingPowerKey(userId));
+  const current = cached !== null ? Number(cached) : fallbackCash;
+
+  await setCachedValue(buyingPowerKey(userId), current + delta, BUYING_POWER_TTL);
+};
+
+/**
  * Buy stock - create/update holding, add transaction, deduct cash
  */
 export const buyStock = async (userId, symbol, quantity, price) => {
@@ -84,7 +111,8 @@ export const buyStock = async (userId, symbol, quantity, price) => {
   const portfolio = await getOrCreatePortfolio(userId);
 
   // Check sufficient funds
-  if (total > portfolio.cash) {
+  const buyingPower = await getBuyingPower(userId);
+  if (total > buyingPower) {
     throw new ValidationError('Insufficient funds');
   }
 
@@ -133,6 +161,8 @@ export const buyStock = async (userId, symbol, quantity, price) => {
         cash: portfolio.cash - total,
       },
     });
+
+    await applyBuyingPowerDelta(userId, -total, portfolio.cash);
 
     // Create transaction record
     const transaction = await tx.transaction.create({
@@ -219,6 +249,8 @@ export const sellStock = async (userId, symbol, quantity, price) => {
         cash: portfolio.cash + total,
       },
     });
+
+    await applyBuyingPowerDelta(userId, total, portfolio.cash);
 
     // Create transaction record
     const transaction = await tx.transaction.create({
@@ -368,5 +400,7 @@ export const resetPortfolio = async (userId) => {
       where: { id: portfolio.id },
       data: { cash: INITIAL_CASH },
     });
+
+    await setCachedValue(buyingPowerKey(userId), INITIAL_CASH, BUYING_POWER_TTL);
   });
 };
