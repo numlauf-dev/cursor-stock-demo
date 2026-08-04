@@ -39,6 +39,38 @@ describe('Portfolio API', () => {
     });
   });
 
+  it('returns a single transaction from GET /api/v1/portfolio/transactions/:id', async () => {
+    const buyResponse = await portfolioRequest('post', '/api/v1/portfolio/buy').send({
+      symbol: 'AAPL',
+      quantity: 3,
+      price: 100,
+    });
+
+    const [created] = buyResponse.body.data.portfolio.transactions;
+    const response = await portfolioRequest('get', `/api/v1/portfolio/transactions/${created.id}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.transaction).toMatchObject({
+      id: created.id,
+      type: 'BUY',
+      symbol: 'AAPL',
+      quantity: 3,
+      price: 100,
+      total: 300,
+    });
+    expect(response.body.data.cashBalance).toBe(99700);
+  });
+
+  it('returns 404 for a transaction id that does not exist', async () => {
+    const response = await portfolioRequest(
+      'get',
+      '/api/v1/portfolio/transactions/00000000-0000-0000-0000-000000000000'
+    );
+
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+  });
+
   it('returns the full updated portfolio after buy requests, including averaged holdings', async () => {
     await portfolioRequest('post', '/api/v1/portfolio/buy').send({
       symbol: 'aapl',
