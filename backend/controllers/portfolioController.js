@@ -7,6 +7,16 @@ import logger from '../utils/logger.js';
 import { ValidationError } from '../utils/errors.js';
 import crypto from 'crypto';
 
+const serializeTransaction = (transaction) => ({
+  id: transaction.id,
+  type: transaction.type,
+  symbol: transaction.symbol,
+  quantity: transaction.quantity,
+  price: transaction.price,
+  total: transaction.total,
+  timestamp: transaction.timestamp.toISOString(),
+});
+
 const serializePortfolio = (portfolio) => ({
   cash: portfolio.cash,
   holdings: portfolio.holdings.map((holding) => ({
@@ -14,15 +24,7 @@ const serializePortfolio = (portfolio) => ({
     quantity: holding.quantity,
     avgPrice: holding.avgPrice,
   })),
-  transactions: portfolio.transactions.map((transaction) => ({
-    id: transaction.id,
-    type: transaction.type,
-    symbol: transaction.symbol,
-    quantity: transaction.quantity,
-    price: transaction.price,
-    total: transaction.total,
-    timestamp: transaction.timestamp.toISOString(),
-  })),
+  transactions: portfolio.transactions.map(serializeTransaction),
 });
 
 /**
@@ -151,6 +153,29 @@ export const getPortfolio = async (req, res, next) => {
       success: true,
       data: {
         portfolio: serializePortfolio(portfolio),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get a single transaction
+ */
+export const getTransaction = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { transaction, cashBalance } = await portfolioService.getTransactionDetail(
+      req.user.id,
+      id
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        transaction: serializeTransaction(transaction),
+        cashBalance,
       },
     });
   } catch (error) {

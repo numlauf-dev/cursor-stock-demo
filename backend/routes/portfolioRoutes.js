@@ -11,6 +11,7 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get('/', portfolioController.getPortfolio);
+router.get('/transactions/:id', portfolioController.getTransaction);
 router.post('/buy', portfolioController.buyStock);
 router.post('/sell', portfolioController.sellStock);
 router.post('/migrate', portfolioController.migratePortfolio);
