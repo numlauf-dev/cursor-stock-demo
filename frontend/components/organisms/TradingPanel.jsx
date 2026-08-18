@@ -77,7 +77,7 @@ const TradingPanel = ({ symbol, currentPrice }) => {
           variant="success"
           onClick={() => setTradeType('BUY')}
           className="w-full"
-          disabled={cash < currentPrice}
+          disabled={cash <= 0}
         >
           Buy {symbol}
         </Button>
