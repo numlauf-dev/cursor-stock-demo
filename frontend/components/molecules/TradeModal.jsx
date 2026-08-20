@@ -2,70 +2,41 @@ import { useState } from 'react'
 import Button from '../atoms/Button'
 import Input from '../atoms/Input'
 import { formatCurrency, formatNumber } from '../../utils/calculations'
+import { emptyDraft, resolveDraft } from '../../utils/orderDraft'
 
-const parseQuantity = (value) => {
-  const parsed = Number.parseFloat(value)
-  return Number.isFinite(parsed) ? parsed : 0
+const UNIT_TABS = [
+  { unit: 'shares', label: 'Shares' },
+  { unit: 'dollars', label: 'Dollars' },
+]
+
+const PLACEHOLDERS = {
+  shares: 'Enter shares (for example 1.5)',
+  dollars: 'Enter dollars (for example 250.00)',
 }
 
-const TradeModal = ({ 
-  isOpen, 
-  onClose, 
-  type, 
-  symbol, 
-  currentPrice, 
+const formatShares = (shares) =>
+  new Intl.NumberFormat('en-US', { maximumFractionDigits: 6 }).format(shares)
+
+const TradeModal = ({
+  onClose,
+  type,
+  symbol,
+  currentPrice,
   onConfirm,
   availableShares = 0,
   availableCash = 0
 }) => {
-  const [quantity, setQuantity] = useState('')
-  const [error, setError] = useState('')
-
-  if (!isOpen) return null
+  const [draft, setDraft] = useState(emptyDraft())
 
   const isBuy = type === 'BUY'
-  const quantityNum = parseQuantity(quantity)
-  const total = quantityNum * currentPrice
-
-  const handleQuantityChange = (e) => {
-    const value = e.target.value
-    setQuantity(value)
-    setError('')
-
-    if (value.trim() === '') {
-      return
-    }
-
-    const num = parseQuantity(value)
-    if (num <= 0) {
-      setError('Quantity must be greater than 0')
-      return
-    }
-
-    if (isBuy) {
-      if (num * currentPrice > availableCash) {
-        setError('Insufficient funds')
-      }
-    } else {
-      if (num > availableShares) {
-        setError('Insufficient shares')
-      }
-    }
-  }
-
-  const handleConfirm = () => {
-    if (error || !quantity || quantityNum <= 0) return
-
-    onConfirm(quantityNum)
-    setQuantity('')
-    setError('')
-  }
-
-  const handleClose = () => {
-    setQuantity('')
-    setError('')
-    onClose()
-  }
+  const resolution = resolveDraft(draft, {
+    side: type,
+    price: currentPrice,
+    cash: availableCash,
+    heldShares: availableShares,
+  })
+  const total =
+    resolution.status === 'ready' ? resolution.notional : 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -75,7 +46,7 @@ const TradeModal = ({
             {isBuy ? 'Buy' : 'Sell'} {symbol}
           </h2>
           <button
-            onClick={handleClose}
+            onClick={onClose}
             className="text-gray-400 hover:text-white text-2xl"
           >
             ×
@@ -106,15 +77,39 @@ const TradeModal = ({
             </div>
           )}
 
+          <div
+            role="group"
+            aria-label="Order size unit"
+            className="flex rounded-lg overflow-hidden border border-gray-600"
+          >
+            {UNIT_TABS.map(({ unit, label }) => {
+              const pressed = draft.unit === unit
+              return (
+                <button
+                  key={unit}
+                  type="button"
+                  aria-pressed={pressed}
+                  onClick={() => setDraft({ unit, amount: '' })}
+                  className={`flex-1 px-4 py-2 text-sm font-medium ${
+                    pressed
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+
           <Input
             type="number"
             label="Quantity"
-            value={quantity}
-            onChange={handleQuantityChange}
-            placeholder="Enter shares (for example 1.5)"
-            min="0.01"
-            step="0.01"
-            error={error}
+            value={draft.amount}
+            onChange={(e) => setDraft({ ...draft, amount: e.target.value })}
+            placeholder={PLACEHOLDERS[draft.unit]}
+            step="any"
+            error={resolution.status === 'invalid' ? resolution.reason : ''}
           />
 
           <div className="bg-gray-700 rounded-lg p-4">
@@ -122,21 +117,31 @@ const TradeModal = ({
             <div className="text-white text-xl font-bold">
               {formatCurrency(total)}
             </div>
+            {draft.unit === 'dollars' && resolution.status === 'ready' && (
+              <div className="text-gray-400 text-sm mt-1">
+                ≈ {formatShares(resolution.shares)} shares
+              </div>
+            )}
           </div>
         </div>
 
         <div className="flex gap-3">
           <Button
             variant="outline"
-            onClick={handleClose}
+            onClick={onClose}
             className="flex-1"
           >
             Cancel
           </Button>
           <Button
             variant={isBuy ? 'success' : 'danger'}
-            onClick={handleConfirm}
-            disabled={!!error || !quantity || quantityNum <= 0}
+            onClick={() => {
+              if (resolution.status !== 'ready') return
+              const shares = resolution.shares
+              setDraft((current) => emptyDraft(current.unit))
+              onConfirm(shares)
+            }}
+            disabled={resolution.status !== 'ready'}
             className="flex-1"
           >
             Confirm {isBuy ? 'Buy' : 'Sell'}
