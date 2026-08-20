@@ -77,7 +77,7 @@ const TradingPanel = ({ symbol, currentPrice }) => {
           variant="success"
           onClick={() => setTradeType('BUY')}
           className="w-full"
-          disabled={cash < currentPrice}
+          disabled={cash <= 0}
         >
           Buy {symbol}
         </Button>
@@ -91,16 +91,17 @@ const TradingPanel = ({ symbol, currentPrice }) => {
         </Button>
       </div>
 
-      <TradeModal
-        isOpen={tradeType !== null}
-        onClose={() => setTradeType(null)}
-        type={tradeType}
-        symbol={symbol}
-        currentPrice={currentPrice}
-        onConfirm={handleTrade}
-        availableShares={availableShares}
-        availableCash={cash}
-      />
+      {tradeType && (
+        <TradeModal
+          onClose={() => setTradeType(null)}
+          type={tradeType}
+          symbol={symbol}
+          currentPrice={currentPrice}
+          onConfirm={handleTrade}
+          availableShares={availableShares}
+          availableCash={cash}
+        />
+      )}
     </div>
   )
 }
