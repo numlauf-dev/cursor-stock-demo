@@ -6,11 +6,12 @@ import {
   calculatePortfolioValue, 
   calculateTotalPnL 
 } from '../../utils/calculations'
+import Skeleton from '../atoms/Skeleton'
 
 const PortfolioSummary = () => {
   const { cash, holdings } = usePortfolio()
   const symbols = holdings.map(h => h.symbol)
-  const { quotes } = useMultipleQuotes(symbols)
+  const { quotes, loading } = useMultipleQuotes(symbols)
 
   const currentPrices = {}
   Object.keys(quotes).forEach(symbol => {
@@ -24,6 +25,21 @@ const PortfolioSummary = () => {
   const pnlPercent = costBasis > 0 ? (totalPnL / costBasis) * 100 : 0
 
   const isPositive = totalPnL >= 0
+  const isLoading = loading && holdings.length > 0
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+            <Skeleton className="w-24 mb-3" />
+            <Skeleton className="w-32 h-9 mb-1" />
+            {i === 3 && <Skeleton className="w-20 h-5" />}
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -53,6 +53,28 @@ const TradeModal = ({
     }
   }
 
+  const handleQuickAmount = (percentage) => {
+    let amount
+    if (isBuy) {
+      const maxShares = availableCash / currentPrice
+      amount = (maxShares * percentage).toFixed(6)
+    } else {
+      amount = (availableShares * percentage).toFixed(6)
+    }
+    
+    const cleanAmount = parseFloat(amount).toString()
+    setQuantity(cleanAmount)
+    
+    const num = parseQuantity(cleanAmount)
+    if (isBuy && num * currentPrice > availableCash) {
+      setError('Insufficient funds')
+    } else if (!isBuy && num > availableShares) {
+      setError('Insufficient shares')
+    } else {
+      setError('')
+    }
+  }
+
   const handleConfirm = () => {
     if (error || !quantity || quantityNum <= 0) return
 
@@ -106,16 +128,41 @@ const TradeModal = ({
             </div>
           )}
 
-          <Input
-            type="number"
-            label="Quantity"
-            value={quantity}
-            onChange={handleQuantityChange}
-            placeholder="Enter shares (for example 1.5)"
-            min="0.01"
-            step="0.01"
-            error={error}
-          />
+          <div>
+            <Input
+              type="number"
+              label="Quantity"
+              value={quantity}
+              onChange={handleQuantityChange}
+              placeholder="Enter shares"
+              min="0.01"
+              step="0.01"
+              error={error}
+            />
+            <div className="flex gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => handleQuickAmount(0.25)}
+                className="flex-1 px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+              >
+                25%
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickAmount(0.5)}
+                className="flex-1 px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+              >
+                50%
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickAmount(1.0)}
+                className="flex-1 px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+              >
+                Max
+              </button>
+            </div>
+          </div>
 
           <div className="bg-gray-700 rounded-lg p-4">
             <div className="text-gray-400 text-sm mb-1">Total</div>

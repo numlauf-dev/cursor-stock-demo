@@ -2,7 +2,7 @@ import { useWatchlist } from '../../context/WatchlistContext'
 import { useMultipleQuotes } from '../../hooks/useStockData'
 import { useNavigate } from 'react-router-dom'
 import { formatCurrency, formatPercentage } from '../../utils/calculations'
-import LoadingSpinner from '../atoms/LoadingSpinner'
+import Skeleton from '../atoms/Skeleton'
 
 const WatchlistHighlights = () => {
   const { watchlist } = useWatchlist()
@@ -25,8 +25,14 @@ const WatchlistHighlights = () => {
     return (
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
         <h2 className="text-2xl font-semibold text-white mb-4">Watchlist Highlights</h2>
-        <div className="flex justify-center items-center py-12">
-          <LoadingSpinner />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {[...Array(Math.min(watchlist.length, 4))].map((_, i) => (
+            <div key={i} className="bg-gray-700/50 border border-gray-600 rounded-lg p-4">
+              <Skeleton className="w-20 mb-3" />
+              <Skeleton className="w-32 h-8 mb-2" />
+              <Skeleton className="w-28 h-7" />
+            </div>
+          ))}
         </div>
       </div>
     )
