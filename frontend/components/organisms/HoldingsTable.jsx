@@ -8,12 +8,28 @@ import {
   calculateHoldingPnL,
   calculatePnLPercentage 
 } from '../../utils/calculations'
+import Skeleton from '../atoms/Skeleton'
 
 const HoldingsTable = () => {
   const navigate = useNavigate()
   const { holdings } = usePortfolio()
   const symbols = holdings.map(h => h.symbol)
   const { quotes, loading } = useMultipleQuotes(symbols)
+
+  const totals = holdings.reduce((acc, holding) => {
+    const quote = quotes[holding.symbol]
+    const currentPrice = quote?.currentPrice || holding.avgPrice
+    const rowCostBasis = parseFloat((holding.quantity * holding.avgPrice).toFixed(2))
+    const rowMarketValue = parseFloat((holding.quantity * currentPrice).toFixed(2))
+
+    return {
+      costBasis: acc.costBasis + rowCostBasis,
+      marketValue: acc.marketValue + rowMarketValue,
+    }
+  }, { costBasis: 0, marketValue: 0 })
+
+  const totalPnL = totals.marketValue - totals.costBasis
+  const totalsArePositive = totalPnL >= 0
 
   if (holdings.length === 0) {
     return (
@@ -25,6 +41,8 @@ const HoldingsTable = () => {
       </div>
     )
   }
+
+  const isInitialLoading = loading && Object.keys(quotes).length === 0
 
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
@@ -56,15 +74,28 @@ const HoldingsTable = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-700">
-            {holdings.map((holding) => {
-              const quote = quotes[holding.symbol]
-              const currentPrice = quote?.currentPrice || holding.avgPrice
-              const marketValue = holding.quantity * currentPrice
-              const pnl = calculateHoldingPnL(holding, currentPrice)
-              const pnlPercent = calculatePnLPercentage(holding, currentPrice)
-              const isPositive = pnl >= 0
+            {isInitialLoading ? (
+              [...Array(3)].map((_, i) => (
+                <tr key={i}>
+                  <td className="px-6 py-4"><Skeleton className="w-16" /></td>
+                  <td className="px-6 py-4"><Skeleton className="w-20 ml-auto" /></td>
+                  <td className="px-6 py-4"><Skeleton className="w-24 ml-auto" /></td>
+                  <td className="px-6 py-4"><Skeleton className="w-24 ml-auto" /></td>
+                  <td className="px-6 py-4"><Skeleton className="w-28 ml-auto" /></td>
+                  <td className="px-6 py-4"><Skeleton className="w-24 ml-auto" /></td>
+                  <td className="px-6 py-4"><Skeleton className="w-20 ml-auto" /></td>
+                </tr>
+              ))
+            ) : (
+              holdings.map((holding) => {
+                const quote = quotes[holding.symbol]
+                const currentPrice = quote?.currentPrice || holding.avgPrice
+                const marketValue = holding.quantity * currentPrice
+                const pnl = calculateHoldingPnL(holding, currentPrice)
+                const pnlPercent = calculatePnLPercentage(holding, currentPrice)
+                const isPositive = pnl >= 0
 
-              return (
+                return (
                 <tr 
                   key={holding.symbol}
                   onClick={() => navigate(`/stock/${holding.symbol}`)}
@@ -98,9 +129,24 @@ const HoldingsTable = () => {
                     {formatPercentage(pnlPercent)}
                   </td>
                 </tr>
-              )
-            })}
+                )
+              })
+            )}
           </tbody>
+          <tfoot className="bg-gray-900">
+            <tr>
+              <td className="px-6 py-4 text-sm font-semibold text-gray-300" colSpan={4}>
+                Total
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-white">
+                {formatCurrency(totals.marketValue)}
+              </td>
+              <td className={`px-6 py-4 whitespace-nowrap text-right text-sm font-semibold ${totalsArePositive ? 'text-gain' : 'text-loss'}`}>
+                {formatCurrency(totalPnL)}
+              </td>
+              <td className="px-6 py-4"></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
