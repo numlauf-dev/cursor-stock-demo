@@ -6,7 +6,9 @@ export const searchStocksValidator = [
     .notEmpty()
     .withMessage('Search query is required')
     .isLength({ min: 1, max: 50 })
-    .withMessage('Search query must be between 1 and 50 characters'),
+    .withMessage('Search query must be between 1 and 50 characters')
+    .matches(/^[A-Za-z0-9.\-\s]+$/)
+    .withMessage('Invalid search query format. Only letters, numbers, dots, hyphens, and spaces are allowed.'),
 ];
 
 export const getStockHistoryValidator = [

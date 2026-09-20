@@ -9,6 +9,85 @@ describe('Stock API', () => {
     app = await loadTestApp();
   });
 
+  describe('GET /api/v1/stocks/search', () => {
+    it('should return search results for valid query', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/search')
+        .query({ query: 'AAPL' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('results');
+      expect(Array.isArray(response.body.data.results)).toBe(true);
+    });
+
+    it('should reject query with special characters like &', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/search')
+        .query({ query: 'AAPL&' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toMatch(/Invalid search query format/i);
+    });
+
+    it('should reject query with special characters like script tags', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/search')
+        .query({ query: 'AAPL<script>' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toMatch(/Invalid search query format/i);
+    });
+
+    it('should reject query with single quotes', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/search')
+        .query({ query: "GOOG'" });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toMatch(/Invalid search query format/i);
+    });
+
+    it('should accept query with dots and hyphens', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/search')
+        .query({ query: 'BRK.B' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+    });
+
+    it('should accept query with spaces', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/search')
+        .query({ query: 'Apple Inc' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+    });
+
+    it('should reject empty query', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/search')
+        .query({ query: '' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should reject query exceeding max length', async () => {
+      const response = await request(app)
+        .get('/api/v1/stocks/search')
+        .query({ query: 'A'.repeat(51) });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+  });
+
   describe('GET /api/v1/stocks/:symbol/history', () => {
     it('should return history for valid symbol (AAPL)', async () => {
       const response = await request(app)

@@ -70,12 +70,14 @@ const ensureAuth = async () => {
         const errorText = await result.text();
         throw new Error(`Rate limited: ${errorText}`);
       }
-    } catch (error) {
+  } catch (error) {
+    if (DEBUG_API_LOGS) {
       console.error('[API] Auth initialization failed:', error);
-      if (error.message.includes('429') || error.message.includes('Rate limited')) {
-        lastAuthError = '429';
-      }
-      throw error;
+    }
+    if (error.message.includes('429') || error.message.includes('Rate limited')) {
+      lastAuthError = '429';
+    }
+    throw error;
     } finally {
       authPromise = null;
     }
@@ -94,7 +96,9 @@ const apiRequest = async (endpoint, options = {}) => {
   try {
     await ensureAuth();
   } catch (authError) {
-    console.warn('[API] Auth check failed, continuing with existing token if available:', authError.message);
+    if (DEBUG_API_LOGS) {
+      console.warn('[API] Auth check failed, continuing with existing token if available:', authError.message);
+    }
     // Continue anyway - might have a valid token from before
   }
   
@@ -116,7 +120,9 @@ const apiRequest = async (endpoint, options = {}) => {
       headers,
     });
   } catch (networkError) {
-    console.error('[API] Network error:', networkError);
+    if (DEBUG_API_LOGS) {
+      console.error('[API] Network error:', networkError);
+    }
     throw new Error(`Network error: ${networkError.message}. Is the backend server running on ${API_BASE_URL}?`);
   }
 
@@ -143,7 +149,9 @@ const apiRequest = async (endpoint, options = {}) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('[API] Error response:', errorText);
+    if (DEBUG_API_LOGS) {
+      console.error('[API] Error response:', errorText);
+    }
     let error;
     try {
       error = JSON.parse(errorText);
@@ -243,16 +251,11 @@ export const api = {
   },
 
   async addStockToWatchlist(watchlistId, symbol) {
-    try {
-      const result = await apiRequest(`/watchlists/${watchlistId}/stocks`, {
-        method: 'POST',
-        body: JSON.stringify({ symbol }),
-      });
-      return result.data.item;
-    } catch (error) {
-      console.error('[API] addStockToWatchlist error:', error);
-      throw error;
-    }
+    const result = await apiRequest(`/watchlists/${watchlistId}/stocks`, {
+      method: 'POST',
+      body: JSON.stringify({ symbol }),
+    });
+    return result.data.item;
   },
 
   async removeStockFromWatchlist(watchlistId, symbol) {

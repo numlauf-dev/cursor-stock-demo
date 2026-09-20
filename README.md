@@ -23,7 +23,7 @@ A full-featured React-based stock trading simulator that allows users to practic
 - **Finnhub API** - Stock market data
 - **Context API** - State management
 
-## 📦 Installation
+## 📦 Installation & Quick Start
 
 1. Clone the repository:
 ```bash
@@ -36,27 +36,42 @@ cd cursor-stock-demo
 npm install
 ```
 
-3. (Optional) Set up API keys:
-   - Sign up for a free API key at [Finnhub](https://finnhub.io)
-   - Create a `.env` file in the root directory:
-   ```bash
-   cp .env.example .env
-   ```
-   - Add your API key to `.env`:
-   ```
-   STOCK_API_PROVIDER=auto
-   FINNHUB_API_KEY=your_api_key_here
-   VITE_FINNHUB_API_KEY=your_api_key_here
-   ```
-   - Note: the backend now prefers Finnhub for quotes/search/news when a real Finnhub key is present, which keeps AI portfolio analysis on real prices instead of mock quotes
-   - If no real provider key is present, the app falls back to mock data
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+**Note:** The app works out of the box with mock data. No API keys required for demo!
 
-4. Start the development server:
+4. Set up the database:
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
+5. Start the backend API server (in one terminal):
+```bash
+npm run server:dev
+```
+The backend will start at `http://localhost:3000`
+
+6. Start the frontend dev server (in another terminal):
 ```bash
 npm run dev
 ```
+The frontend will start at `http://localhost:5173`
 
-5. Open your browser to `http://localhost:5173`
+7. Open your browser to `http://localhost:5173`
+
+### Optional: Real Stock Data
+
+To use real stock prices instead of mock data:
+- Sign up for a free API key at [Finnhub](https://finnhub.io)
+- Edit `.env` and replace `demo` with your real API keys:
+```
+FINNHUB_API_KEY=your_real_api_key_here
+VITE_FINNHUB_API_KEY=your_real_api_key_here
+```
+- Restart both servers
 
 ## 🎮 Usage
 

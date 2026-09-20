@@ -68,9 +68,15 @@ export const errorHandler = (err, req, res, next) => {
     error = new UnauthorizedError(message);
   }
 
-  res.status(error.statusCode || 500).json({
+  const response = {
     success: false,
     error: error.message || 'Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-  });
+  };
+
+  // Only include stack trace in development mode
+  if (process.env.NODE_ENV === 'development') {
+    response.stack = err.stack;
+  }
+
+  res.status(error.statusCode || 500).json(response);
 };
