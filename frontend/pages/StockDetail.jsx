@@ -1,16 +1,22 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useStockQuote, useStockProfile, useStockNews } from '../hooks/useStockData'
 import { useWatchlist } from '../context/WatchlistContext'
+import { usePriceAlerts } from '../hooks/usePriceAlerts'
 import PriceDisplay from '../components/atoms/PriceDisplay'
 import Button from '../components/atoms/Button'
 import TradingPanel from '../components/organisms/TradingPanel'
 import StockChart from '../components/organisms/StockChart'
+import PriceAlertForm from '../components/molecules/PriceAlertForm'
+import PriceAlertsList from '../components/molecules/PriceAlertsList'
 import { formatCurrency } from '../utils/calculations'
+import { getAlertsForSymbol } from '../utils/priceAlerts'
 
 const StockDetail = () => {
   const { symbol } = useParams()
-  const { quote, loading: quoteLoading } = useStockQuote(symbol?.toUpperCase())
-  const { profile, loading: profileLoading } = useStockProfile(symbol?.toUpperCase())
+  const upperSymbol = symbol?.toUpperCase()
+  const { quote, loading: quoteLoading } = useStockQuote(upperSymbol)
+  const { profile, loading: profileLoading } = useStockProfile(upperSymbol)
   const {
     news,
     loading: newsLoading,
@@ -19,11 +25,23 @@ const StockDetail = () => {
     loadMoreError: newsLoadMoreError,
     hasMore: newsHasMore,
     loadMore: loadMoreNews,
-  } = useStockNews(symbol?.toUpperCase(), 5)
+  } = useStockNews(upperSymbol, 5)
   const { isInWatchlist, toggleWatchlist, isReady: watchlistReady, loading: watchlistLoading } = useWatchlist()
+  
+  const [symbolAlerts, setSymbolAlerts] = useState(() => getAlertsForSymbol(upperSymbol))
+  const quotes = quote ? { [upperSymbol]: quote } : {}
+  const { permissionStatus, requestPermission, refreshAlerts } = usePriceAlerts(quotes)
 
-  const upperSymbol = symbol?.toUpperCase()
   const inWatchlist = isInWatchlist(upperSymbol)
+
+  const handleAlertCreated = () => {
+    refreshAlerts()
+    setSymbolAlerts(getAlertsForSymbol(upperSymbol))
+  }
+
+  const handleAlertDeleted = () => {
+    setSymbolAlerts(getAlertsForSymbol(upperSymbol))
+  }
 
   const getSentimentChipClasses = (sentiment) => {
     if (sentiment === 'positive') {
@@ -216,8 +234,48 @@ const StockDetail = () => {
             )}
           </div>
         </div>
-        <div>
+        <div className="space-y-6">
           <TradingPanel symbol={upperSymbol} currentPrice={quote.currentPrice} />
+          
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Price Alerts</h2>
+            
+            {permissionStatus === 'denied' && (
+              <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700 rounded-lg">
+                <p className="text-sm text-yellow-400">
+                  Browser notifications are blocked. Enable them in your browser settings to receive alerts.
+                </p>
+              </div>
+            )}
+            
+            {permissionStatus === 'default' && (
+              <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700 rounded-lg">
+                <p className="text-sm text-blue-400 mb-2">
+                  Enable notifications to get alerted when price targets are reached.
+                </p>
+                <Button variant="primary" size="sm" onClick={requestPermission}>
+                  Enable Notifications
+                </Button>
+              </div>
+            )}
+            
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-300 mb-3">Create New Alert</h3>
+              <PriceAlertForm
+                symbol={upperSymbol}
+                currentPrice={quote.currentPrice}
+                onAlertCreated={handleAlertCreated}
+              />
+            </div>
+            
+            <div>
+              <h3 className="text-sm font-medium text-gray-300 mb-3">Active Alerts</h3>
+              <PriceAlertsList
+                alerts={symbolAlerts}
+                onAlertDeleted={handleAlertDeleted}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
