@@ -26,7 +26,9 @@ const PortfolioSummary = () => {
   const costBasis = portfolioValue - totalPnL
   const pnlPercent = costBasis > 0 ? (totalPnL / costBasis) * 100 : 0
 
-  const isPositive = totalPnL >= 0
+  const isPositive = totalPnL > 0
+  const isNegative = totalPnL < 0
+  const isZero = totalPnL === 0
   const isLoading = loading && holdings.length > 0
 
   if (isLoading) {
@@ -58,11 +60,11 @@ const PortfolioSummary = () => {
               {formatCurrency(totalValue)}
             </div>
             <Badge 
-              variant={isPositive ? 'gain' : 'loss'} 
-              showArrow={true}
+              variant={isZero ? 'muted' : isPositive ? 'gain' : 'loss'} 
+              showArrow={!isZero}
               size="md"
             >
-              {formatCurrency(totalPnL)} ({formatPercentage(pnlPercent)})
+              {formatCurrency(Math.abs(totalPnL))} ({formatPercentage(Math.abs(pnlPercent))})
             </Badge>
           </div>
         </div>

@@ -121,42 +121,42 @@ const WatchlistNewsPanel = ({ watchlistId, symbols = [], isWatchlistReady = fals
 
   if (!isWatchlistReady) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-        <h2 className="text-2xl font-semibold text-white mb-4">Watchlist News</h2>
-        <div className="text-sm text-gray-400">Loading watchlist news...</div>
+      <div className="bg-surface border border-border rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-text mb-4">Watchlist News</h2>
+        <div className="text-sm text-text-muted">Loading watchlist news...</div>
       </div>
     )
   }
 
   if (!symbols.length) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-        <h2 className="text-2xl font-semibold text-white mb-4">Watchlist News</h2>
-        <div className="text-sm text-gray-400">Add symbols to your watchlist to see aggregated news.</div>
+      <div className="bg-surface border border-border rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-text mb-4">Watchlist News</h2>
+        <div className="text-sm text-text-muted">Add symbols to your watchlist to see aggregated news.</div>
       </div>
     )
   }
 
   if (!watchlistId) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-        <h2 className="text-2xl font-semibold text-white mb-4">Watchlist News</h2>
-        <div className="text-sm text-gray-400">Unable to sync watchlist news right now.</div>
+      <div className="bg-surface border border-border rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-text mb-4">Watchlist News</h2>
+        <div className="text-sm text-text-muted">Unable to sync watchlist news right now.</div>
       </div>
     )
   }
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-      <h2 className="text-2xl font-semibold text-white mb-4">Watchlist News</h2>
+    <div className="bg-surface border border-border rounded-lg p-6">
+      <h2 className="text-xl font-semibold text-text mb-4">Watchlist News</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-        <label className="text-sm text-gray-300">
+        <label className="text-sm text-text">
           <span className="block mb-1">Symbol</span>
           <select
             value={symbolFilter}
             onChange={(event) => setSymbolFilter(event.target.value)}
-            className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-sm text-white"
+            className="w-full bg-surface-raised border border-border rounded px-3 py-2 text-sm text-text"
           >
             {symbolOptions.map((option) => (
               <option key={option.label} value={option.value}>
@@ -166,12 +166,12 @@ const WatchlistNewsPanel = ({ watchlistId, symbols = [], isWatchlistReady = fals
           </select>
         </label>
 
-        <label className="text-sm text-gray-300">
+        <label className="text-sm text-text">
           <span className="block mb-1">Sentiment</span>
           <select
             value={sentimentFilter}
             onChange={(event) => setSentimentFilter(event.target.value)}
-            className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-sm text-white"
+            className="w-full bg-surface-raised border border-border rounded px-3 py-2 text-sm text-text"
           >
             {SENTIMENT_OPTIONS.map((option) => (
               <option key={option.label} value={option.value}>
@@ -181,12 +181,12 @@ const WatchlistNewsPanel = ({ watchlistId, symbols = [], isWatchlistReady = fals
           </select>
         </label>
 
-        <label className="text-sm text-gray-300">
+        <label className="text-sm text-text">
           <span className="block mb-1">Sort</span>
           <select
             value={sortOrder}
             onChange={(event) => setSortOrder(event.target.value)}
-            className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-sm text-white"
+            className="w-full bg-surface-raised border border-border rounded px-3 py-2 text-sm text-text"
           >
             {SORT_OPTIONS.map((option) => (
               <option key={option.label} value={option.value}>
@@ -200,16 +200,16 @@ const WatchlistNewsPanel = ({ watchlistId, symbols = [], isWatchlistReady = fals
       {loading ? (
         <div className="space-y-3">
           {[0, 1, 2].map((item) => (
-            <div key={item} className="animate-pulse border border-gray-700 rounded-lg p-4">
-              <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
-              <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+            <div key={item} className="animate-pulse border border-border rounded-lg p-4">
+              <div className="h-4 bg-surface-raised rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-surface-raised rounded w-1/2"></div>
             </div>
           ))}
         </div>
       ) : error ? (
-        <div className="text-sm text-red-400">{error}</div>
+        <div className="text-sm text-loss">{error}</div>
       ) : articles.length === 0 ? (
-        <div className="text-sm text-gray-400">No watchlist news matches your selected filters.</div>
+        <div className="text-sm text-text-muted">No watchlist news matches your selected filters.</div>
       ) : (
         <div className="space-y-3">
           {articles.map((article, index) => (
@@ -218,22 +218,22 @@ const WatchlistNewsPanel = ({ watchlistId, symbols = [], isWatchlistReady = fals
               href={article.url}
               target="_blank"
               rel="noreferrer"
-              className="block border border-gray-700 hover:border-gray-500 rounded-lg p-4 transition-colors"
+              className="block border border-border hover:border-accent/50 rounded-lg p-4 transition-all duration-150"
             >
               <div className="flex items-start justify-between gap-3 mb-2">
-                <h3 className="text-sm font-semibold text-white">{article.headline}</h3>
+                <h3 className="text-sm font-semibold text-text">{article.headline}</h3>
                 <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${getSentimentChipClasses(article.sentiment)}`}>
                   {getSentimentLabel(article.sentiment)}
                 </span>
               </div>
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-text-muted">
                 {article.symbol} · {article.source} · {formatPublishedTime(article.publishedAt)}
               </div>
             </a>
           ))}
 
           {loadMoreError && (
-            <div className="text-sm text-red-400">
+            <div className="text-sm text-loss">
               Could not load more watchlist news. Please try again.
             </div>
           )}

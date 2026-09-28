@@ -76,7 +76,9 @@ const WatchlistHighlights = () => {
             )
           }
 
-          const isPositive = quote.change >= 0
+          const isPositive = quote.change > 0
+          const isNegative = quote.change < 0
+          const isZero = quote.change === 0
 
           return (
             <Card
@@ -98,11 +100,11 @@ const WatchlistHighlights = () => {
                 </div>
                 
                 <Badge 
-                  variant={isPositive ? 'gain' : 'loss'} 
-                  showArrow={quote.change !== 0}
+                  variant={isZero ? 'muted' : isPositive ? 'gain' : 'loss'} 
+                  showArrow={!isZero}
                   size="sm"
                 >
-                  {formatCurrency(Math.abs(quote.change))} ({formatPercentage(quote.changePercent)})
+                  {formatCurrency(Math.abs(quote.change))} ({formatPercentage(Math.abs(quote.changePercent))})
                 </Badge>
               </div>
             </Card>
