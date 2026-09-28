@@ -6,6 +6,8 @@ import {
   calculatePortfolioValue, 
   calculateTotalPnL 
 } from '../../utils/calculations'
+import Card from '../atoms/Card'
+import Badge from '../atoms/Badge'
 import Skeleton from '../atoms/Skeleton'
 
 const PortfolioSummary = () => {
@@ -29,49 +31,67 @@ const PortfolioSummary = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-gray-200 rounded-lg p-6">
-            <Skeleton className="w-24 mb-3" />
-            <Skeleton className="w-32 h-9 mb-1" />
-            {i === 3 && <Skeleton className="w-20 h-5" />}
-          </div>
-        ))}
+      <div>
+        <Card className="mb-6">
+          <Skeleton className="w-40 h-10 mb-2" />
+          <Skeleton className="w-24 h-6" />
+        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i}>
+              <Skeleton className="w-24 mb-3" />
+              <Skeleton className="w-32 h-8" />
+            </Card>
+          ))}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div className="bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-gray-200 rounded-lg p-6">
-        <div className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-sm mb-2">Total Value</div>
-        <div className="text-white dark:text-white light:text-gray-900 text-3xl font-bold">
-          {formatCurrency(totalValue)}
+    <div>
+      <Card className="mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-text-muted text-sm mb-1">Portfolio Value</div>
+            <div className="text-text text-4xl font-bold tabular-nums mb-2">
+              {formatCurrency(totalValue)}
+            </div>
+            <Badge 
+              variant={isPositive ? 'gain' : 'loss'} 
+              showArrow={true}
+              size="md"
+            >
+              {formatCurrency(totalPnL)} ({formatPercentage(pnlPercent)})
+            </Badge>
+          </div>
         </div>
-      </div>
+      </Card>
 
-      <div className="bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-gray-200 rounded-lg p-6">
-        <div className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-sm mb-2">Portfolio Value</div>
-        <div className="text-white dark:text-white light:text-gray-900 text-3xl font-bold">
-          {formatCurrency(portfolioValue)}
-        </div>
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <div className="text-text-muted text-sm mb-2">Holdings Value</div>
+          <div className="text-text text-2xl font-bold tabular-nums">
+            {formatCurrency(portfolioValue)}
+          </div>
+        </Card>
 
-      <div className="bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-gray-200 rounded-lg p-6">
-        <div className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-sm mb-2">Cash Balance</div>
-        <div className="text-white dark:text-white light:text-gray-900 text-3xl font-bold">
-          {formatCurrency(cash)}
-        </div>
-      </div>
+        <Card>
+          <div className="text-text-muted text-sm mb-2">Cash Balance</div>
+          <div className="text-text text-2xl font-bold tabular-nums">
+            {formatCurrency(cash)}
+          </div>
+        </Card>
 
-      <div className="bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-gray-200 rounded-lg p-6">
-        <div className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-sm mb-2">Total P&L</div>
-        <div className={`text-3xl font-bold ${isPositive ? 'text-gain' : 'text-loss'}`}>
-          {formatCurrency(totalPnL)}
-        </div>
-        <div className={`text-sm ${isPositive ? 'text-gain' : 'text-loss'}`}>
-          {formatPercentage(pnlPercent)}
-        </div>
+        <Card>
+          <div className="text-text-muted text-sm mb-2">Total Return</div>
+          <div className={`text-2xl font-bold tabular-nums ${isPositive ? 'text-gain' : 'text-loss'}`}>
+            {formatCurrency(totalPnL)}
+          </div>
+          <div className={`text-sm tabular-nums ${isPositive ? 'text-gain' : 'text-loss'}`}>
+            {formatPercentage(pnlPercent)}
+          </div>
+        </Card>
       </div>
     </div>
   )

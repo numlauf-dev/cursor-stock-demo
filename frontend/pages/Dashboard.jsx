@@ -19,14 +19,17 @@ const Dashboard = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold text-white dark:text-white light:text-gray-900">Portfolio Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-text mb-1">Portfolio Dashboard</h1>
+          <p className="text-text-muted text-sm">Track your investments and performance</p>
+        </div>
         <Button variant="danger" size="sm" onClick={handleReset}>
           Reset Portfolio
         </Button>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         <PortfolioSummary />
         
         <WatchlistHighlights />
@@ -37,12 +40,12 @@ const Dashboard = () => {
         />
         
         <div>
-          <h2 className="text-2xl font-semibold text-white dark:text-white light:text-gray-900 mb-4">Your Holdings</h2>
+          <h2 className="text-xl font-semibold text-text mb-4">Your Holdings</h2>
           <HoldingsTable />
         </div>
 
         <div>
-          <h2 className="text-2xl font-semibold text-white dark:text-white light:text-gray-900 mb-4">AI Portfolio Analysis</h2>
+          <h2 className="text-xl font-semibold text-text mb-4">AI Portfolio Analysis</h2>
           <PortfolioCommentary />
         </div>
       </div>
