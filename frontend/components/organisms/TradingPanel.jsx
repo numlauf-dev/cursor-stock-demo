@@ -8,11 +8,13 @@ const TradingPanel = ({ symbol, currentPrice }) => {
   const { cash, getHolding, buyStock, sellStock } = usePortfolio()
   const [tradeType, setTradeType] = useState(null)
   const [notification, setNotification] = useState(null)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const holding = getHolding(symbol)
   const availableShares = holding?.quantity || 0
 
   const handleTrade = async (quantity) => {
+    setIsProcessing(true)
     const result = tradeType === 'BUY'
       ? await buyStock(symbol, quantity, currentPrice)
       : await sellStock(symbol, quantity, currentPrice)
@@ -30,7 +32,12 @@ const TradingPanel = ({ symbol, currentPrice }) => {
     }
 
     setTradeType(null)
-    setTimeout(() => setNotification(null), 5000)
+    
+    // Delay re-enabling to prevent double-click bleed-through
+    setTimeout(() => {
+      setIsProcessing(false)
+      setNotification(null)
+    }, 300)
   }
 
   return (
@@ -60,7 +67,7 @@ const TradingPanel = ({ symbol, currentPrice }) => {
           <div className="text-white text-lg font-semibold">
             {holding ? (
               <>
-                {formatNumber(holding.quantity)} shares
+                {formatNumber(holding.quantity)} {holding.quantity === 1 ? 'share' : 'shares'}
                 <div className="text-sm text-gray-400 mt-1">
                   Avg Price: {formatCurrency(holding.avgPrice)}
                 </div>
@@ -77,7 +84,7 @@ const TradingPanel = ({ symbol, currentPrice }) => {
           variant="success"
           onClick={() => setTradeType('BUY')}
           className="w-full"
-          disabled={cash < currentPrice}
+          disabled={cash < currentPrice || isProcessing}
         >
           Buy {symbol}
         </Button>
@@ -85,7 +92,7 @@ const TradingPanel = ({ symbol, currentPrice }) => {
           variant="danger"
           onClick={() => setTradeType('SELL')}
           className="w-full"
-          disabled={!holding || holding.quantity === 0}
+          disabled={!holding || holding.quantity === 0 || isProcessing}
         >
           Sell {symbol}
         </Button>

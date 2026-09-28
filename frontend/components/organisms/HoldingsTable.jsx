@@ -10,11 +10,9 @@ import {
 } from '../../utils/calculations'
 import Skeleton from '../atoms/Skeleton'
 
-const HoldingsTable = () => {
+const HoldingsTable = ({ quotes = {}, quotesLoading = false }) => {
   const navigate = useNavigate()
   const { holdings } = usePortfolio()
-  const symbols = holdings.map(h => h.symbol)
-  const { quotes, loading } = useMultipleQuotes(symbols)
 
   const totals = holdings.reduce((acc, holding) => {
     const quote = quotes[holding.symbol]
@@ -54,7 +52,7 @@ const HoldingsTable = () => {
     )
   }
 
-  const isInitialLoading = loading && Object.keys(quotes).length === 0
+  const isInitialLoading = quotesLoading && Object.keys(quotes).length === 0
 
   return (
     <div className="bg-surface border border-border rounded-xl overflow-hidden">
@@ -126,7 +124,7 @@ const HoldingsTable = () => {
                     {formatCurrency(holding.avgPrice)}
                   </td>
                   <td className="px-6 py-3.5 whitespace-nowrap text-right text-sm text-text tabular-nums">
-                    {loading ? (
+                    {quotesLoading ? (
                       <div className="h-4 w-16 bg-surface-raised rounded animate-pulse ml-auto"></div>
                     ) : (
                       formatCurrency(currentPrice)

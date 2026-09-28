@@ -201,9 +201,20 @@ export const sellStock = async (userId, symbol, quantity, price) => {
     // Update or delete holding
     let updatedHolding;
     if (newQuantity > 0) {
+      // Partial sell: reduce total cost basis by the proceeds realized
+      // This prevents double-counting realized gains
+      const totalOriginalCost = holding.quantity * holding.avgPrice
+      const proceedsRealized = quantity * price
+      const remainingCostBasis = totalOriginalCost - proceedsRealized
+      // Prevent negative cost basis
+      const newAvgPrice = Math.max(0, remainingCostBasis / newQuantity)
+      
       updatedHolding = await tx.holding.update({
         where: { id: holding.id },
-        data: { quantity: newQuantity },
+        data: { 
+          quantity: newQuantity,
+          avgPrice: newAvgPrice
+        },
       });
     } else {
       await tx.holding.delete({

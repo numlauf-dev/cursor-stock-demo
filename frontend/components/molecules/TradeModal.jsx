@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Button from '../atoms/Button'
 import Input from '../atoms/Input'
 import { formatCurrency, formatNumber } from '../../utils/calculations'
@@ -20,12 +20,21 @@ const TradeModal = ({
 }) => {
   const [quantity, setQuantity] = useState('')
   const [error, setError] = useState('')
+  const [lockedPrice, setLockedPrice] = useState(null)
+
+  // Lock the price when modal opens
+  useEffect(() => {
+    if (isOpen && currentPrice) {
+      setLockedPrice(currentPrice)
+    }
+  }, [isOpen, currentPrice])
 
   if (!isOpen) return null
 
   const isBuy = type === 'BUY'
+  const priceToUse = lockedPrice || currentPrice
   const quantityNum = parseQuantity(quantity)
-  const total = quantityNum * currentPrice
+  const total = Math.max(0, quantityNum * priceToUse) // Never show negative total
 
   const handleQuantityChange = (e) => {
     const value = e.target.value
@@ -43,7 +52,7 @@ const TradeModal = ({
     }
 
     if (isBuy) {
-      if (num * currentPrice > availableCash) {
+      if (num * priceToUse > availableCash) {
         setError('Insufficient funds')
       }
     } else {
@@ -56,7 +65,7 @@ const TradeModal = ({
   const handleQuickAmount = (percentage) => {
     let amount
     if (isBuy) {
-      const maxShares = availableCash / currentPrice
+      const maxShares = availableCash / priceToUse
       amount = (maxShares * percentage).toFixed(6)
     } else {
       amount = (availableShares * percentage).toFixed(6)
@@ -66,7 +75,7 @@ const TradeModal = ({
     setQuantity(cleanAmount)
     
     const num = parseQuantity(cleanAmount)
-    if (isBuy && num * currentPrice > availableCash) {
+    if (isBuy && num * priceToUse > availableCash) {
       setError('Insufficient funds')
     } else if (!isBuy && num > availableShares) {
       setError('Insufficient shares')
@@ -108,7 +117,7 @@ const TradeModal = ({
           <div className="bg-gray-700 rounded-lg p-4">
             <div className="text-gray-400 text-sm mb-1">Current Price</div>
             <div className="text-white text-xl font-bold">
-              {formatCurrency(currentPrice)}
+              {formatCurrency(priceToUse)}
             </div>
           </div>
 

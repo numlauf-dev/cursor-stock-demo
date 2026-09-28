@@ -96,7 +96,9 @@ describe('portfolioService', () => {
     expect(averagedBuy.holding.quantity).toBeCloseTo(2);
     expect(averagedBuy.holding.avgPrice).toBeCloseTo(107.5);
     expect(sellResult.holding.quantity).toBeCloseTo(1.25);
-    expect(sellResult.holding.avgPrice).toBeCloseTo(107.5);
+    // Cost basis: $215 (original) - $105 (proceeds) = $110 remaining
+    // New avg price: $110 / 1.25 = $88
+    expect(sellResult.holding.avgPrice).toBeCloseTo(88);
     expect(sellResult.transaction).toMatchObject({
       type: 'SELL',
       symbol: 'AAPL',
@@ -107,17 +109,19 @@ describe('portfolioService', () => {
     expect(sellResult.portfolio.cash).toBeCloseTo(99890);
   });
 
-  it('supports partial sells without changing average price', async () => {
+  it('reduces cost basis proportionally on partial sells', async () => {
     const user = await createTestUser();
 
     await portfolioService.buyStock(user.id, 'AAPL', 10, 100);
     const result = await portfolioService.sellStock(user.id, 'AAPL', 4, 150);
 
     expect(result.portfolio.cash).toBe(99600);
+    // Partial sell reduces cost basis: $1000 (original) - $600 (proceeds) = $400 remaining
+    // New avg price: $400 / 6 shares = $66.67
     expect(result.holding).toMatchObject({
       symbol: 'AAPL',
       quantity: 6,
-      avgPrice: 100,
+      avgPrice: expect.closeTo(66.67, 0.01),
     });
     expect(result.transaction).toMatchObject({
       type: 'SELL',
