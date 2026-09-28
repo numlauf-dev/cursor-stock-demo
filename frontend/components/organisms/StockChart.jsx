@@ -86,7 +86,7 @@ const StockChart = ({ symbol }) => {
 
   if (loading) {
     return (
-      <div className="bg-surface border border-border rounded-lg p-6">
+      <div className="bg-surface border border-border rounded-xl p-6">
         <div className="animate-pulse">
           <div className="h-8 bg-surface-raised rounded w-32 mb-4"></div>
           <div className="h-96 bg-surface-raised rounded"></div>
@@ -97,7 +97,7 @@ const StockChart = ({ symbol }) => {
 
   if (error) {
     return (
-      <div className="bg-surface border border-border rounded-lg p-6">
+      <div className="bg-surface border border-border rounded-xl p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div>
             <h2 className="text-xl font-semibold text-text">Price Chart</h2>
@@ -119,7 +119,7 @@ const StockChart = ({ symbol }) => {
           </div>
         </div>
         <div className="h-96 flex flex-col items-center justify-center text-center">
-          <p className="text-red-400 mb-4">Unable to load historical price data.</p>
+          <p className="text-loss mb-4">Unable to load historical price data.</p>
           <Button variant="outline" size="sm" onClick={refresh}>
             Retry
           </Button>
@@ -130,7 +130,7 @@ const StockChart = ({ symbol }) => {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-surface border border-border rounded-lg p-6">
+      <div className="bg-surface border border-border rounded-xl p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div>
             <h2 className="text-xl font-semibold text-text">Price Chart</h2>
@@ -164,7 +164,7 @@ const StockChart = ({ symbol }) => {
   const lineColor = isPositive ? '#10b981' : '#ef4444'
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-6">
+    <div className="bg-surface border border-border rounded-xl p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h2 className="text-xl font-semibold text-text">Price Chart</h2>
@@ -188,16 +188,16 @@ const StockChart = ({ symbol }) => {
 
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgb(63 63 70)" className="dark:stroke-[rgb(63_63_70)] stroke-[rgb(228_228_231)]" />
           <XAxis
             dataKey="label"
-            stroke="#9ca3af"
-            tick={{ fill: '#9ca3af' }}
+            stroke="rgb(161 161 170)"
+            tick={{ fill: 'rgb(161 161 170)' }}
             minTickGap={24}
           />
           <YAxis
-            stroke="#9ca3af"
-            tick={{ fill: '#9ca3af' }}
+            stroke="rgb(161 161 170)"
+            tick={{ fill: 'rgb(161 161 170)' }}
             domain={['auto', 'auto']}
             width={92}
             tickFormatter={(value) => formatCurrency(value)}
@@ -205,10 +205,10 @@ const StockChart = ({ symbol }) => {
           <Tooltip
             labelFormatter={(_, payload) => payload?.[0]?.payload?.tooltipLabel || ''}
             contentStyle={{
-              backgroundColor: '#1f2937',
-              border: '1px solid #374151',
-              borderRadius: '8px',
-              color: '#fff',
+              backgroundColor: 'rgb(24 24 27)',
+              border: '1px solid rgb(63 63 70)',
+              borderRadius: '12px',
+              color: 'rgb(250 250 250)',
             }}
             formatter={(value, name) => [formatCurrency(Number(value)), name === 'close' ? 'Close' : name]}
           />
