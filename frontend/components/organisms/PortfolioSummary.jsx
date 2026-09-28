@@ -65,7 +65,7 @@ const PortfolioSummary = () => {
                 showArrow={!isZero}
                 size="md"
               >
-                {formatCurrency(Math.abs(totalPnL))} ({formatPercentage(Math.abs(pnlPercent))})
+                {formatCurrency(totalPnL)} ({formatPercentage(pnlPercent)})
               </Badge>
             </div>
             <div className="flex gap-6 text-sm">

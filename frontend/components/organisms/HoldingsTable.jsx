@@ -80,9 +80,6 @@ const HoldingsTable = () => {
               <th className="px-6 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">
                 P&L
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">
-                P&L %
-              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -95,7 +92,6 @@ const HoldingsTable = () => {
                   <td className="px-6 py-3.5"><Skeleton className="w-24 ml-auto" /></td>
                   <td className="px-6 py-3.5"><Skeleton className="w-28 ml-auto" /></td>
                   <td className="px-6 py-3.5"><Skeleton className="w-24 ml-auto" /></td>
-                  <td className="px-6 py-3.5"><Skeleton className="w-20 ml-auto" /></td>
                 </tr>
               ))
             ) : (
@@ -140,10 +136,8 @@ const HoldingsTable = () => {
                     {formatCurrency(marketValue)}
                   </td>
                   <td className={`px-6 py-3.5 whitespace-nowrap text-right text-sm font-semibold tabular-nums ${isPositive ? 'text-gain' : 'text-loss'}`}>
-                    {formatCurrency(pnl)}
-                  </td>
-                  <td className={`px-6 py-3.5 whitespace-nowrap text-right text-sm font-semibold tabular-nums ${isPositive ? 'text-gain' : 'text-loss'}`}>
-                    {formatPercentage(pnlPercent)}
+                    <div>{formatCurrency(pnl)}</div>
+                    <div className="text-xs">{formatPercentage(pnlPercent)}</div>
                   </td>
                 </tr>
                 )
@@ -161,7 +155,6 @@ const HoldingsTable = () => {
               <td className={`px-6 py-3.5 whitespace-nowrap text-right text-sm font-semibold tabular-nums ${totalsArePositive ? 'text-gain' : 'text-loss'}`}>
                 {formatCurrency(totalPnL)}
               </td>
-              <td className="px-6 py-3.5"></td>
             </tr>
           </tfoot>
         </table>

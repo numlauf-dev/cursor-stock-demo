@@ -150,51 +150,45 @@ const WatchlistNewsPanel = ({ watchlistId, symbols = [], isWatchlistReady = fals
   return (
     <div className="bg-surface border border-border rounded-xl p-4">
 
-      <div className="grid grid-cols-1 gap-3 mb-4">
-        <label className="text-sm text-text">
-          <span className="block mb-1">Symbol</span>
-          <select
-            value={symbolFilter}
-            onChange={(event) => setSymbolFilter(event.target.value)}
-            className="w-full bg-surface-raised border border-border rounded-lg px-3 py-2 text-sm text-text"
-          >
-            {symbolOptions.map((option) => (
-              <option key={option.label} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <select
+          value={symbolFilter}
+          onChange={(event) => setSymbolFilter(event.target.value)}
+          className="text-xs bg-surface-raised border border-border rounded-lg px-2 py-1.5 text-text"
+          aria-label="Filter by symbol"
+        >
+          {symbolOptions.map((option) => (
+            <option key={option.label} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
 
-        <label className="text-sm text-text">
-          <span className="block mb-1">Sentiment</span>
-          <select
-            value={sentimentFilter}
-            onChange={(event) => setSentimentFilter(event.target.value)}
-            className="w-full bg-surface-raised border border-border rounded-lg px-3 py-2 text-sm text-text"
-          >
-            {SENTIMENT_OPTIONS.map((option) => (
-              <option key={option.label} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <select
+          value={sentimentFilter}
+          onChange={(event) => setSentimentFilter(event.target.value)}
+          className="text-xs bg-surface-raised border border-border rounded-lg px-2 py-1.5 text-text"
+          aria-label="Filter by sentiment"
+        >
+          {SENTIMENT_OPTIONS.map((option) => (
+            <option key={option.label} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
 
-        <label className="text-sm text-text">
-          <span className="block mb-1">Sort</span>
-          <select
-            value={sortOrder}
-            onChange={(event) => setSortOrder(event.target.value)}
-            className="w-full bg-surface-raised border border-border rounded-lg px-3 py-2 text-sm text-text"
-          >
-            {SORT_OPTIONS.map((option) => (
-              <option key={option.label} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <select
+          value={sortOrder}
+          onChange={(event) => setSortOrder(event.target.value)}
+          className="text-xs bg-surface-raised border border-border rounded-lg px-2 py-1.5 text-text"
+          aria-label="Sort order"
+        >
+          {SORT_OPTIONS.map((option) => (
+            <option key={option.label} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {loading ? (

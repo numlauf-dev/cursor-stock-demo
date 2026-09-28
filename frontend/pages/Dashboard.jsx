@@ -22,7 +22,7 @@ const Dashboard = () => {
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-2xl font-bold text-text mb-1">Portfolio</h1>
-          <p className="text-text-muted text-sm uppercase tracking-wide">Dashboard</p>
+          <p className="text-text-muted text-xs">Last updated: {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
         </div>
         <Button variant="ghost" size="sm" onClick={handleReset}>
           Reset

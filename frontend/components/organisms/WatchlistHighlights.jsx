@@ -104,7 +104,7 @@ const WatchlistHighlights = () => {
                   showArrow={!isZero}
                   size="sm"
                 >
-                  {formatCurrency(Math.abs(quote.change))} ({formatPercentage(Math.abs(quote.changePercent))})
+                  {formatCurrency(quote.change)} ({formatPercentage(quote.changePercent)})
                 </Badge>
               </div>
             </Card>

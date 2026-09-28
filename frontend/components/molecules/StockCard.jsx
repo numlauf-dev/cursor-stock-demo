@@ -55,8 +55,8 @@ const StockCard = ({ symbol, quote, onRemove, variant = 'compact', showRemove = 
         
         <div className={`inline-flex items-center gap-1 px-2 py-1 rounded ${changeSize} font-semibold tabular-nums ${changeColorClass}`}>
           <span className="text-xs">{isPositive ? '▲' : isNeutral ? '—' : '▼'}</span>
-          <span>{formatCurrency(Math.abs(quote.change))}</span>
-          <span>({formatPercentage(Math.abs(quote.changePercent))})</span>
+          <span>{formatCurrency(quote.change)}</span>
+          <span>({formatPercentage(quote.changePercent)})</span>
         </div>
       </div>
     </div>
