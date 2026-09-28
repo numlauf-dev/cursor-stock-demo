@@ -225,3 +225,78 @@ describe('stockService Finnhub adapters', () => {
     expect(() => formatFinnhubQuote('AAPL', { c: 0 })).toThrow('Stock quote not found for symbol: AAPL');
   });
 });
+
+describe('stockService mock quote behavior', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = { ...originalEnv };
+    process.env.STOCK_API_PROVIDER = 'mock';
+    delete process.env.STOCK_API_KEY;
+    delete process.env.FINNHUB_API_KEY;
+    delete process.env.VITE_FINNHUB_API_KEY;
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  it('generates nonzero change and prevClose different from price', async () => {
+    const quote = await getStockQuote('AAPL');
+
+    expect(quote.price).toBeGreaterThan(0);
+    expect(quote.previousClose).toBeGreaterThan(0);
+    expect(quote.previousClose).not.toBe(quote.price);
+    expect(quote.change).not.toBe(0);
+    expect(quote.changePercent).not.toBe(0);
+    expect(Math.abs(quote.change)).toBeGreaterThan(0.01);
+  });
+
+  it('computes change and changePercent correctly from price and prevClose', async () => {
+    const quote = await getStockQuote('TSLA');
+
+    const expectedChange = quote.price - quote.previousClose;
+    const expectedChangePercent = (expectedChange / quote.previousClose) * 100;
+
+    expect(quote.change).toBeCloseTo(expectedChange, 1);
+    expect(quote.changePercent).toBeCloseTo(expectedChangePercent, 1);
+  });
+
+  it('returns deterministic quotes for the same symbol across repeated calls', async () => {
+    const quote1 = await getStockQuote('MSFT');
+    const quote2 = await getStockQuote('MSFT');
+
+    expect(quote1.previousClose).toBe(quote2.previousClose);
+    expect(quote1.price).toBe(quote2.price);
+    expect(quote1.change).toBe(quote2.change);
+    expect(quote1.changePercent).toBe(quote2.changePercent);
+  });
+
+  it('returns different prevClose and change for different symbols', async () => {
+    const quote1 = await getStockQuote('AAPL');
+    const quote2 = await getStockQuote('GOOGL');
+
+    expect(quote1.previousClose).not.toBe(quote2.previousClose);
+    expect(quote1.change).not.toBe(quote2.change);
+  });
+
+  it('generates a mix of gainers and losers across symbols', async () => {
+    const symbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'JPM'];
+    const quotes = await Promise.all(symbols.map(symbol => getStockQuote(symbol)));
+
+    const gainers = quotes.filter(q => q.change > 0);
+    const losers = quotes.filter(q => q.change < 0);
+
+    expect(gainers.length).toBeGreaterThan(0);
+    expect(losers.length).toBeGreaterThan(0);
+  });
+
+  it('keeps prevClose offset within -3% to +3% of current price', async () => {
+    const symbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'];
+    const quotes = await Promise.all(symbols.map(symbol => getStockQuote(symbol)));
+
+    quotes.forEach(quote => {
+      const percentDiff = Math.abs((quote.change / quote.price) * 100);
+      expect(percentDiff).toBeLessThanOrEqual(3);
+    });
+  });
+});
