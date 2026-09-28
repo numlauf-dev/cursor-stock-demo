@@ -90,7 +90,8 @@ const TradeModal = ({
   const handleConfirm = () => {
     if (error || !quantity || quantityNum <= 0) return
 
-    onConfirm(quantityNum)
+    // Pass both quantity and locked price so trade executes at the confirmed price
+    onConfirm(quantityNum, priceToUse)
     setQuantity('')
     setError('')
   }

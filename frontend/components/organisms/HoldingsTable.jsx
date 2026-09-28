@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom'
 import { usePortfolio } from '../../context/PortfolioContext'
-import { useMultipleQuotes } from '../../hooks/useStockData'
 import { 
   formatCurrency, 
   formatPercentage, 

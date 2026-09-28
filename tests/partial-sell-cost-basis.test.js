@@ -24,7 +24,7 @@ describe('Partial Sell Cost Basis', () => {
       .set('Authorization', authHeader);
   });
 
-  it('reduces cost basis proportionally when selling part of a position', async () => {
+  it('partial sell keeps average price constant (regression guard)', async () => {
     // Buy 10 shares at $150 each (cost $1,500)
     const buyResponse = await request(app)
       .post('/api/v1/portfolio/buy')
@@ -55,16 +55,14 @@ describe('Partial Sell Cost Basis', () => {
     expect(sellResponse.status).toBe(200);
     const afterSell = sellResponse.body.data.portfolio;
     
-    // Remaining: 6 shares
+    // Remaining: 6 shares at unchanged $150 avg price
     expect(afterSell.holdings).toHaveLength(1);
     expect(afterSell.holdings[0].quantity).toBe(6);
+    expect(afterSell.holdings[0].avgPrice).toBe(150);
     
-    // Proportional reduction: sold 40% of shares, so remaining 60% of total cost basis
-    // Original basis: $1500, remaining basis: $900 (6 * $150)
-    // Avg price stays constant at $150
+    // Total basis: 6 * $150 = $900 (down from original $1500)
     const remainingCostBasis = afterSell.holdings[0].quantity * afterSell.holdings[0].avgPrice;
-    expect(remainingCostBasis).toBeCloseTo(900, 0);
-    expect(afterSell.holdings[0].avgPrice).toBeCloseTo(150, 2);
+    expect(remainingCostBasis).toBe(900);
     
     // Cash: $98,500 (after buy) + $800 (proceeds) = $99,300
     expect(afterSell.cash).toBe(99300);

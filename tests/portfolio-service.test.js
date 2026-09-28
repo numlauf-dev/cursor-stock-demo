@@ -96,7 +96,6 @@ describe('portfolioService', () => {
     expect(averagedBuy.holding.quantity).toBeCloseTo(2);
     expect(averagedBuy.holding.avgPrice).toBeCloseTo(107.5);
     expect(sellResult.holding.quantity).toBeCloseTo(1.25);
-    // Avg price stays constant on partial sell (traditional cost basis)
     expect(sellResult.holding.avgPrice).toBeCloseTo(107.5);
     expect(sellResult.transaction).toMatchObject({
       type: 'SELL',
@@ -108,16 +107,13 @@ describe('portfolioService', () => {
     expect(sellResult.portfolio.cash).toBeCloseTo(99890);
   });
 
-  it('reduces cost basis proportionally on partial sells', async () => {
+  it('supports partial sells without changing average price', async () => {
     const user = await createTestUser();
 
     await portfolioService.buyStock(user.id, 'AAPL', 10, 100);
     const result = await portfolioService.sellStock(user.id, 'AAPL', 4, 150);
 
     expect(result.portfolio.cash).toBe(99600);
-    // Partial sell reduces total cost proportionally: sold 4/10 = 40% of shares
-    // Remaining 60% of shares keep the same avg price ($100)
-    // Total basis: 6 shares * $100 = $600 (down from original $1000)
     expect(result.holding).toMatchObject({
       symbol: 'AAPL',
       quantity: 6,

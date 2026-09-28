@@ -13,31 +13,39 @@ const TradingPanel = ({ symbol, currentPrice }) => {
   const holding = getHolding(symbol)
   const availableShares = holding?.quantity || 0
 
-  const handleTrade = async (quantity) => {
+  const handleTrade = async (quantity, executionPrice) => {
     setIsProcessing(true)
-    const result = tradeType === 'BUY'
-      ? await buyStock(symbol, quantity, currentPrice)
-      : await sellStock(symbol, quantity, currentPrice)
-
-    if (result.success) {
-      setNotification({
-        type: 'success',
-        message: `Successfully ${tradeType === 'BUY' ? 'bought' : 'sold'} ${formatNumber(quantity)} shares of ${symbol}`
-      })
-    } else {
-      setNotification({
-        type: 'error',
-        message: result.error
-      })
-    }
-
-    setTradeType(null)
+    let notificationTimer = null
     
-    // Delay re-enabling to prevent double-click bleed-through
-    setTimeout(() => {
-      setIsProcessing(false)
-      setNotification(null)
-    }, 300)
+    try {
+      // Execute trade at the locked price from the modal
+      const result = tradeType === 'BUY'
+        ? await buyStock(symbol, quantity, executionPrice)
+        : await sellStock(symbol, quantity, executionPrice)
+
+      if (result.success) {
+        setNotification({
+          type: 'success',
+          message: `Successfully ${tradeType === 'BUY' ? 'bought' : 'sold'} ${formatNumber(quantity)} shares of ${symbol}`
+        })
+        // Keep notification visible for 5s
+        notificationTimer = setTimeout(() => setNotification(null), 5000)
+      } else {
+        setNotification({
+          type: 'error',
+          message: result.error
+        })
+        // Keep error visible for 5s
+        notificationTimer = setTimeout(() => setNotification(null), 5000)
+      }
+
+      setTradeType(null)
+    } finally {
+      // Re-enable buttons after 300ms to prevent double-click bleed-through
+      setTimeout(() => {
+        setIsProcessing(false)
+      }, 300)
+    }
   }
 
   return (

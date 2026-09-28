@@ -1,5 +1,4 @@
 import { usePortfolio } from '../../context/PortfolioContext'
-import { useMultipleQuotes } from '../../hooks/useStockData'
 import { 
   formatCurrency, 
   formatPercentage, 

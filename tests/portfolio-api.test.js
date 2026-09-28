@@ -86,7 +86,6 @@ describe('Portfolio API', () => {
 
     expect(sellResponse.status).toBe(200);
     expect(sellResponse.body.data.portfolio.cash).toBe(99800);
-    // Partial sell keeps avg price constant (traditional cost basis accounting)
     expect(sellResponse.body.data.portfolio.holdings).toEqual([
       {
         symbol: 'AAPL',
@@ -139,7 +138,6 @@ describe('Portfolio API', () => {
 
     expect(sellResponse.status).toBe(200);
     expect(sellResponse.body.data.portfolio.cash).toBeCloseTo(99885);
-    // Partial sell keeps avg price constant (traditional cost basis)
     expect(sellResponse.body.data.portfolio.holdings).toEqual([
       {
         symbol: 'AAPL',

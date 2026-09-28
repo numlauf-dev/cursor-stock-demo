@@ -201,17 +201,9 @@ export const sellStock = async (userId, symbol, quantity, price) => {
     // Update or delete holding
     let updatedHolding;
     if (newQuantity > 0) {
-      // Partial sell: reduce cost basis proportionally by shares sold
-      // If selling 40% of shares, reduce total cost basis by 40%
-      // This keeps the average price constant: traditional cost-basis accounting
-      // (avgPrice stays the same; only quantity changes)
-      
       updatedHolding = await tx.holding.update({
         where: { id: holding.id },
-        data: { 
-          quantity: newQuantity,
-          // avgPrice remains unchanged - standard portfolio accounting
-        },
+        data: { quantity: newQuantity },
       });
     } else {
       await tx.holding.delete({
