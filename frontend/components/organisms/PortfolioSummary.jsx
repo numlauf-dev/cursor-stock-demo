@@ -21,10 +21,10 @@ const PortfolioSummary = () => {
   })
 
   const portfolioValue = calculatePortfolioValue(holdings, currentPrices)
-  const totalPnL = calculateTotalPnL(holdings, currentPrices)
   const totalValue = cash + portfolioValue
-  const costBasis = portfolioValue - totalPnL
-  const pnlPercent = costBasis > 0 ? (totalPnL / costBasis) * 100 : 0
+  const startingCapital = 100000
+  const totalPnL = totalValue - startingCapital
+  const pnlPercent = (totalPnL / startingCapital) * 100
 
   const isPositive = totalPnL > 0
   const isNegative = totalPnL < 0

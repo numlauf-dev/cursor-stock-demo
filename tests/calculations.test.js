@@ -209,7 +209,7 @@ describe('calculations', () => {
       expect(formattedCurrency.includes('-')).toBe(false);
     });
 
-    it('calculates portfolio P&L percentage that matches dollar change sign', () => {
+    it('calculates portfolio P&L percentage relative to starting capital', () => {
       const holdings = [
         { symbol: 'AAPL', quantity: 100, avgPrice: 150 },
         { symbol: 'GOOGL', quantity: 50, avgPrice: 200 },
@@ -219,14 +219,16 @@ describe('calculations', () => {
         GOOGL: 190,
       };
       const cash = 10000;
+      const startingCapital = 100000;
 
       const portfolioValue = calculatePortfolioValue(holdings, currentPrices);
-      const totalPnL = calculateTotalPnL(holdings, currentPrices);
-      const costBasis = portfolioValue - totalPnL;
-      const pnlPercent = costBasis > 0 ? (totalPnL / costBasis) * 100 : 0;
+      const totalValue = cash + portfolioValue;
+      const totalPnL = totalValue - startingCapital;
+      const pnlPercent = (totalPnL / startingCapital) * 100;
 
-      expect(totalPnL).toBe(-1500);
-      expect(pnlPercent).toBeCloseTo(-6, 0);
+      expect(totalValue).toBe(33500);
+      expect(totalPnL).toBe(-66500);
+      expect(pnlPercent).toBeCloseTo(-66.5, 1);
       expect(totalPnL < 0).toBe(pnlPercent < 0);
     });
 
