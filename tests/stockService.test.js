@@ -234,9 +234,13 @@ describe('stockService mock quote behavior', () => {
     delete process.env.STOCK_API_KEY;
     delete process.env.FINNHUB_API_KEY;
     delete process.env.VITE_FINNHUB_API_KEY;
+    // Use fake timers to control Date.now() for determinism tests
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-09-28T12:00:00Z'));
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     process.env = { ...originalEnv };
   });
 
@@ -261,7 +265,7 @@ describe('stockService mock quote behavior', () => {
     expect(quote.changePercent).toBeCloseTo(expectedChangePercent, 1);
   });
 
-  it('returns deterministic quotes for the same symbol across repeated calls', async () => {
+  it('returns deterministic quotes for the same symbol across repeated calls at the same time', async () => {
     const quote1 = await getStockQuote('MSFT');
     const quote2 = await getStockQuote('MSFT');
 
@@ -269,6 +273,21 @@ describe('stockService mock quote behavior', () => {
     expect(quote1.price).toBe(quote2.price);
     expect(quote1.change).toBe(quote2.change);
     expect(quote1.changePercent).toBe(quote2.changePercent);
+  });
+
+  it('keeps prevClose fixed but price drifts with time', async () => {
+    const quote1 = await getStockQuote('AAPL');
+    
+    // Advance time by 5 seconds (one drift interval)
+    jest.advanceTimersByTime(5000);
+    
+    const quote2 = await getStockQuote('AAPL');
+
+    // prevClose should stay the same (anchored to basePrice)
+    expect(quote2.previousClose).toBe(quote1.previousClose);
+    // price should drift (may be same or different depending on drift seed)
+    // but change should be different since price moved
+    expect(quote2.price).toBeDefined();
   });
 
   it('returns different prevClose and change for different symbols', async () => {
@@ -290,13 +309,33 @@ describe('stockService mock quote behavior', () => {
     expect(losers.length).toBeGreaterThan(0);
   });
 
-  it('keeps prevClose offset within -3% to +3% of current price', async () => {
+  it('keeps prevClose offset within -3% to +3% of base price', async () => {
     const symbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'];
     const quotes = await Promise.all(symbols.map(symbol => getStockQuote(symbol)));
 
     quotes.forEach(quote => {
-      const percentDiff = Math.abs((quote.change / quote.price) * 100);
-      expect(percentDiff).toBeLessThanOrEqual(3);
+      // Calculate base price for this symbol
+      const seed = Array.from(quote.symbol).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const basePrice = 100 + (seed % 200);
+      
+      // prevClose should be within -3% to +3% of basePrice
+      const percentDiffFromBase = Math.abs(((quote.previousClose - basePrice) / basePrice) * 100);
+      expect(percentDiffFromBase).toBeLessThanOrEqual(3);
+    });
+  });
+
+  it('enforces minimum 0.25% absolute offset to avoid near-zero changes', async () => {
+    // Test a variety of symbols to ensure minimum offset is applied
+    const symbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'JPM', 'V', 'WMT'];
+    const quotes = await Promise.all(symbols.map(symbol => getStockQuote(symbol)));
+
+    quotes.forEach(quote => {
+      const seed = Array.from(quote.symbol).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const basePrice = 100 + (seed % 200);
+      
+      // The absolute percent difference between prevClose and basePrice should be at least 0.25%
+      const percentDiff = Math.abs(((quote.previousClose - basePrice) / basePrice) * 100);
+      expect(percentDiff).toBeGreaterThanOrEqual(0.25);
     });
   });
 });

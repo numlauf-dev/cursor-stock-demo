@@ -165,11 +165,16 @@ const getMockStockData = (symbol) => {
   const driftPercent = ((driftSeed % 60) - 30) / 10000; // -0.3% to +0.3%
   const currentPrice = basePrice * (1 + driftPercent);
   
-  // Generate previousClose that's different from currentPrice
+  // Generate previousClose anchored to basePrice (not currentPrice) so it stays fixed
   // Deterministic per symbol: roughly -3% to +3% different, mix of gainers and losers
   const prevCloseSeed = seed * 17; // Different seed for prevClose
-  const prevCloseOffset = ((prevCloseSeed % 600) - 300) / 10000; // -3% to +3%
-  const previousClose = currentPrice / (1 + prevCloseOffset); // Work backward from current price
+  let prevCloseOffset = ((prevCloseSeed % 600) - 300) / 10000; // -3% to +3%
+  // Enforce minimum absolute offset of 0.25% to avoid near-zero changes
+  const minOffset = 0.0025;
+  if (Math.abs(prevCloseOffset) < minOffset) {
+    prevCloseOffset = prevCloseOffset >= 0 ? minOffset : -minOffset;
+  }
+  const previousClose = basePrice / (1 + prevCloseOffset);
   
   const change = currentPrice - previousClose;
   const changePercent = previousClose !== 0 ? (change / previousClose) * 100 : 0;
