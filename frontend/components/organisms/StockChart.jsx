@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useStockHistory } from '../../hooks/useStockData'
+import { useTheme } from '../../hooks/useTheme'
 import Button from '../atoms/Button'
 import { formatCurrency } from '../../utils/calculations'
 
@@ -61,6 +62,7 @@ const formatTooltipLabel = (dateValue, period) => {
 const StockChart = ({ symbol }) => {
   const [selectedRange, setSelectedRange] = useState('1m')
   const { history, loading, error, refresh } = useStockHistory(symbol, selectedRange)
+  const { theme } = useTheme()
 
   const chartData = useMemo(() => {
     return history
@@ -161,7 +163,18 @@ const StockChart = ({ symbol }) => {
   const firstPrice = chartData[0]?.close || 0
   const lastPrice = chartData[chartData.length - 1]?.close || 0
   const isPositive = lastPrice >= firstPrice
-  const lineColor = isPositive ? '#10b981' : '#ef4444'
+  
+  // Theme-aware colors using #34 tokens
+  const isDark = theme === 'dark'
+  const lineColor = isPositive 
+    ? (isDark ? 'rgb(34 197 94)' : 'rgb(22 163 74)')  // gain token
+    : (isDark ? 'rgb(248 113 113)' : 'rgb(239 68 68)') // loss token
+  
+  const gridColor = isDark ? 'rgb(63 63 70)' : 'rgb(228 228 231)' // border token
+  const axisColor = isDark ? 'rgb(161 161 170)' : 'rgb(113 113 122)' // text-muted token
+  const tooltipBg = isDark ? 'rgb(24 24 27)' : 'rgb(255 255 255)' // surface token
+  const tooltipBorder = isDark ? 'rgb(63 63 70)' : 'rgb(228 228 231)' // border token
+  const tooltipText = isDark ? 'rgb(250 250 250)' : 'rgb(9 9 11)' // text token
 
   return (
     <div className="bg-surface border border-border rounded-xl p-6">
@@ -188,16 +201,16 @@ const StockChart = ({ symbol }) => {
 
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgb(63 63 70)" className="dark:stroke-[rgb(63_63_70)] stroke-[rgb(228_228_231)]" />
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
           <XAxis
             dataKey="label"
-            stroke="rgb(161 161 170)"
-            tick={{ fill: 'rgb(161 161 170)' }}
+            stroke={axisColor}
+            tick={{ fill: axisColor }}
             minTickGap={24}
           />
           <YAxis
-            stroke="rgb(161 161 170)"
-            tick={{ fill: 'rgb(161 161 170)' }}
+            stroke={axisColor}
+            tick={{ fill: axisColor }}
             domain={['auto', 'auto']}
             width={92}
             tickFormatter={(value) => formatCurrency(value)}
@@ -205,10 +218,10 @@ const StockChart = ({ symbol }) => {
           <Tooltip
             labelFormatter={(_, payload) => payload?.[0]?.payload?.tooltipLabel || ''}
             contentStyle={{
-              backgroundColor: 'rgb(24 24 27)',
-              border: '1px solid rgb(63 63 70)',
+              backgroundColor: tooltipBg,
+              border: `1px solid ${tooltipBorder}`,
               borderRadius: '12px',
-              color: 'rgb(250 250 250)',
+              color: tooltipText,
             }}
             formatter={(value, name) => [formatCurrency(Number(value)), name === 'close' ? 'Close' : name]}
           />
