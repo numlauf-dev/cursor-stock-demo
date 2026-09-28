@@ -22,12 +22,15 @@ const TradeModal = ({
   const [error, setError] = useState('')
   const [lockedPrice, setLockedPrice] = useState(null)
 
-  // Lock the price when modal opens
+  // Lock the price only when modal first opens, ignore subsequent currentPrice changes
   useEffect(() => {
-    if (isOpen && currentPrice) {
+    if (isOpen && !lockedPrice && currentPrice) {
       setLockedPrice(currentPrice)
+    } else if (!isOpen && lockedPrice) {
+      // Reset when modal closes
+      setLockedPrice(null)
     }
-  }, [isOpen, currentPrice])
+  }, [isOpen, currentPrice, lockedPrice])
 
   if (!isOpen) return null
 

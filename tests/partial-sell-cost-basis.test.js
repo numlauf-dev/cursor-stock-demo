@@ -59,11 +59,12 @@ describe('Partial Sell Cost Basis', () => {
     expect(afterSell.holdings).toHaveLength(1);
     expect(afterSell.holdings[0].quantity).toBe(6);
     
-    // Cost basis: $1,500 (original) - $800 (proceeds) = $700
-    // Avg price: $700 / 6 = $116.67
+    // Proportional reduction: sold 40% of shares, so remaining 60% of total cost basis
+    // Original basis: $1500, remaining basis: $900 (6 * $150)
+    // Avg price stays constant at $150
     const remainingCostBasis = afterSell.holdings[0].quantity * afterSell.holdings[0].avgPrice;
-    expect(remainingCostBasis).toBeCloseTo(700, 0);
-    expect(afterSell.holdings[0].avgPrice).toBeCloseTo(116.67, 2);
+    expect(remainingCostBasis).toBeCloseTo(900, 0);
+    expect(afterSell.holdings[0].avgPrice).toBeCloseTo(150, 2);
     
     // Cash: $98,500 (after buy) + $800 (proceeds) = $99,300
     expect(afterSell.cash).toBe(99300);

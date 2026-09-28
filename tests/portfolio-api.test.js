@@ -86,13 +86,12 @@ describe('Portfolio API', () => {
 
     expect(sellResponse.status).toBe(200);
     expect(sellResponse.body.data.portfolio.cash).toBe(99800);
-    // Partial sell reduces cost basis: $500 (original) - $300 (proceeds) = $200 remaining
-    // New avg price: $200 / 3 shares = $66.67
+    // Partial sell keeps avg price constant (traditional cost basis accounting)
     expect(sellResponse.body.data.portfolio.holdings).toEqual([
       {
         symbol: 'AAPL',
         quantity: 3,
-        avgPrice: expect.closeTo(66.67, 0.01),
+        avgPrice: 100,
       },
     ]);
     expect(sellResponse.body.data.portfolio.transactions[0]).toMatchObject({
@@ -140,13 +139,12 @@ describe('Portfolio API', () => {
 
     expect(sellResponse.status).toBe(200);
     expect(sellResponse.body.data.portfolio.cash).toBeCloseTo(99885);
-    // Partial sell reduces cost basis: $150 (original) - $35 (proceeds) = $115 remaining
-    // New avg price: $115 / 1.25 shares = $92
+    // Partial sell keeps avg price constant (traditional cost basis)
     expect(sellResponse.body.data.portfolio.holdings).toEqual([
       {
         symbol: 'AAPL',
         quantity: 1.25,
-        avgPrice: 92,
+        avgPrice: 100,
       },
     ]);
     expect(sellResponse.body.data.portfolio.transactions[0]).toMatchObject({
