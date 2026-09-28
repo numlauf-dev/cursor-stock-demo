@@ -114,7 +114,7 @@ const HoldingsTable = () => {
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${getSymbolColor(holding.symbol)}`}>
                         {holding.symbol.substring(0, 2)}
                       </div>
-                      <div className="text-sm font-semibold text-text">
+                      <div className="text-sm font-semibold text-accent">
                         {holding.symbol}
                       </div>
                     </div>
