@@ -22,6 +22,7 @@ const POSITIVE_SENTIMENT_KEYWORDS = [
   'rise',
   'rises',
   'surge',
+  'surges',
   'beat',
   'beats',
   'strong',
@@ -29,6 +30,14 @@ const POSITIVE_SENTIMENT_KEYWORDS = [
   'profit',
   'bullish',
   'upgrade',
+  'upgrades',
+  'upbeat',
+  'soar',
+  'soars',
+  'rally',
+  'rallies',
+  'outperform',
+  'outperforms',
 ];
 
 const NEGATIVE_SENTIMENT_KEYWORDS = [
@@ -45,7 +54,24 @@ const NEGATIVE_SENTIMENT_KEYWORDS = [
   'loss',
   'bearish',
   'downgrade',
+  'downgrades',
   'warning',
+  'warnings',
+  'slip',
+  'slips',
+  'pressure',
+  'cut',
+  'cuts',
+  'lawsuit',
+  'lawsuits',
+  'plunge',
+  'plunges',
+  'tumble',
+  'tumbles',
+  'underperform',
+  'underperforms',
+  'weaken',
+  'weakens',
 ];
 
 const getCacheKey = (type, symbol) => `stock:${type}:${symbol}`;
