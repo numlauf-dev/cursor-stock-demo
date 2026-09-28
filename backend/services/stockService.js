@@ -48,7 +48,7 @@ const NEGATIVE_SENTIMENT_KEYWORDS = [
   'warning',
 ];
 
-const getCacheKey = (type, symbol) => `stock:${type}:${symbol}`;
+const getCacheKey = (type, symbol) => `stock:${type}:v2:${symbol}`;
 
 // Alpha Vantage API client
 const alphaVantageClient = axios.create({

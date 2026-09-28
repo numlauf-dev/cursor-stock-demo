@@ -24,9 +24,10 @@ const TradingPanel = ({ symbol, currentPrice }) => {
         : await sellStock(symbol, quantity, executionPrice)
 
       if (result.success) {
+        const shareText = quantity === 1 ? '1 share' : `${formatNumber(quantity)} shares`;
         setNotification({
           type: 'success',
-          message: `Successfully ${tradeType === 'BUY' ? 'bought' : 'sold'} ${formatNumber(quantity)} shares of ${symbol}`
+          message: `Successfully ${tradeType === 'BUY' ? 'bought' : 'sold'} ${shareText} of ${symbol}`
         })
         // Keep notification visible for 5s
         notificationTimer = setTimeout(() => setNotification(null), 5000)
