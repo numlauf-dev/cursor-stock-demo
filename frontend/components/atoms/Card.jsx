@@ -24,7 +24,7 @@ const Card = ({
   
   return (
     <div 
-      className={`rounded-lg ${variants[variant]} ${paddings[padding]} ${hoverClass} ${clickableClass} ${className}`}
+      className={`rounded-xl ${variants[variant]} ${paddings[padding]} ${hoverClass} ${clickableClass} ${className}`}
       onClick={onClick}
     >
       {children}

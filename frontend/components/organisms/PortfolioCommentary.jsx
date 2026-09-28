@@ -100,7 +100,7 @@ const PortfolioCommentary = () => {
                   return (
                     <div
                       key={index}
-                      className={`border rounded-lg p-4 ${recommendationColors[item.recommendation] || 'border-border'}`}
+                      className={`border rounded-xl p-4 ${recommendationColors[item.recommendation] || 'border-border'}`}
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -126,7 +126,7 @@ const PortfolioCommentary = () => {
           {analysis.risk_assessment && (
             <div>
               <h4 className="text-base font-semibold text-text mb-2">Risk Assessment</h4>
-              <div className="bg-surface-raised border border-border rounded-lg p-4">
+              <div className="bg-surface-raised border border-border rounded-xl p-4">
                 <div className="flex items-center mb-2">
                   <span className="text-sm font-medium text-text-muted mr-2">Risk Level:</span>
                   <Badge 

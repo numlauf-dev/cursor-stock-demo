@@ -7,7 +7,7 @@ const Button = ({
   type = 'button',
   className = ''
 }) => {
-  const baseStyles = 'font-semibold rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transition-none'
+  const baseStyles = 'font-semibold rounded-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transition-none'
   
   const variants = {
     primary: 'bg-accent hover:bg-accent-hover text-white shadow-sm',

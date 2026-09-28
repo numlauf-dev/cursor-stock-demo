@@ -31,9 +31,21 @@ const HoldingsTable = () => {
   const totalPnL = totals.marketValue - totals.costBasis
   const totalsArePositive = totalPnL >= 0
 
+  const getSymbolColor = (symbol) => {
+    const colors = [
+      'bg-blue-500/10 text-blue-500',
+      'bg-purple-500/10 text-purple-500',
+      'bg-green-500/10 text-green-500',
+      'bg-orange-500/10 text-orange-500',
+      'bg-pink-500/10 text-pink-500',
+    ]
+    const index = symbol.charCodeAt(0) % colors.length
+    return colors[index]
+  }
+
   if (holdings.length === 0) {
     return (
-      <div className="bg-surface border border-border rounded-lg p-8">
+      <div className="bg-surface border border-border rounded-xl p-8">
         <div className="text-center text-text-muted">
           <p className="text-xl mb-2">No holdings yet</p>
           <p className="text-sm">Search for stocks to start trading</p>
@@ -45,7 +57,7 @@ const HoldingsTable = () => {
   const isInitialLoading = loading && Object.keys(quotes).length === 0
 
   return (
-    <div className="bg-surface border border-border rounded-lg overflow-hidden">
+    <div className="bg-surface border border-border rounded-xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-surface-raised">
@@ -102,8 +114,13 @@ const HoldingsTable = () => {
                   className="hover:bg-surface-raised cursor-pointer transition-colors duration-150 motion-reduce:transition-none"
                 >
                   <td className="px-6 py-3.5 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-accent">
-                      {holding.symbol}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${getSymbolColor(holding.symbol)}`}>
+                        {holding.symbol.substring(0, 2)}
+                      </div>
+                      <div className="text-sm font-semibold text-text">
+                        {holding.symbol}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-3.5 whitespace-nowrap text-right text-sm text-text tabular-nums">

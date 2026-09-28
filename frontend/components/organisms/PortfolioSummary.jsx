@@ -52,49 +52,35 @@ const PortfolioSummary = () => {
 
   return (
     <div>
-      <Card className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-text-muted text-sm mb-1">Portfolio Value</div>
-            <div className="text-text text-4xl font-bold tabular-nums mb-2">
-              {formatCurrency(totalValue)}
+      <Card className="mb-6 bg-gradient-to-br from-surface to-surface-raised">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="text-text-muted text-xs uppercase tracking-wide mb-2">Total Portfolio Value</div>
+            <div className="flex items-baseline gap-3 mb-3">
+              <div className="text-text text-5xl font-bold tracking-tight tabular-nums">
+                {formatCurrency(totalValue)}
+              </div>
+              <Badge 
+                variant={isZero ? 'muted' : isPositive ? 'gain' : 'loss'} 
+                showArrow={!isZero}
+                size="md"
+              >
+                {formatCurrency(Math.abs(totalPnL))} ({formatPercentage(Math.abs(pnlPercent))})
+              </Badge>
             </div>
-            <Badge 
-              variant={isZero ? 'muted' : isPositive ? 'gain' : 'loss'} 
-              showArrow={!isZero}
-              size="md"
-            >
-              {formatCurrency(Math.abs(totalPnL))} ({formatPercentage(Math.abs(pnlPercent))})
-            </Badge>
+            <div className="flex gap-6 text-sm">
+              <div>
+                <span className="text-text-muted">Holdings:</span>{' '}
+                <span className="text-text font-semibold tabular-nums">{formatCurrency(portfolioValue)}</span>
+              </div>
+              <div>
+                <span className="text-text-muted">Cash:</span>{' '}
+                <span className="text-text font-semibold tabular-nums">{formatCurrency(cash)}</span>
+              </div>
+            </div>
           </div>
         </div>
       </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <div className="text-text-muted text-sm mb-2">Holdings Value</div>
-          <div className="text-text text-2xl font-bold tabular-nums">
-            {formatCurrency(portfolioValue)}
-          </div>
-        </Card>
-
-        <Card>
-          <div className="text-text-muted text-sm mb-2">Cash Balance</div>
-          <div className="text-text text-2xl font-bold tabular-nums">
-            {formatCurrency(cash)}
-          </div>
-        </Card>
-
-        <Card>
-          <div className="text-text-muted text-sm mb-2">Total Return</div>
-          <div className={`text-2xl font-bold tabular-nums ${isPositive ? 'text-gain' : 'text-loss'}`}>
-            {formatCurrency(totalPnL)}
-          </div>
-          <div className={`text-sm tabular-nums ${isPositive ? 'text-gain' : 'text-loss'}`}>
-            {formatPercentage(pnlPercent)}
-          </div>
-        </Card>
-      </div>
     </div>
   )
 }

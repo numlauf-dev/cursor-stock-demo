@@ -47,7 +47,7 @@ const SearchBar = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search stocks..."
-          className="w-full px-4 py-2 pl-10 bg-surface-raised border border-border rounded-lg text-text placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all duration-150"
+          className="w-full px-4 py-2 pl-10 bg-surface-raised border border-border rounded-xl text-text placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all duration-150"
         />
         <svg
           className="absolute left-3 top-2.5 h-5 w-5 text-text-muted"
@@ -65,7 +65,7 @@ const SearchBar = () => {
       </div>
 
       {showResults && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-surface border border-border rounded-lg shadow-xl max-h-96 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-surface border border-border rounded-xl shadow-xl max-h-96 overflow-y-auto">
           {results.map((stock) => (
             <button
               key={stock.symbol}
