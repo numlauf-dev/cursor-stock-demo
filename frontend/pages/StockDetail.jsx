@@ -45,14 +45,14 @@ const StockDetail = () => {
 
   const getSentimentChipClasses = (sentiment) => {
     if (sentiment === 'positive') {
-      return 'bg-green-500/20 text-green-300 border border-green-500/30'
+      return 'bg-gain/10 text-gain border border-gain/20'
     }
 
     if (sentiment === 'negative') {
-      return 'bg-red-500/20 text-red-300 border border-red-500/30'
+      return 'bg-loss/10 text-loss border border-loss/20'
     }
 
-    return 'bg-gray-600/30 text-gray-300 border border-gray-500/40'
+    return 'bg-surface-raised text-text-muted border border-border'
   }
 
   const getSentimentLabel = (sentiment) => {
@@ -79,9 +79,9 @@ const StockDetail = () => {
     return (
       <div className="p-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-700 rounded w-48 mb-4"></div>
-          <div className="h-12 bg-gray-700 rounded w-64 mb-8"></div>
-          <div className="h-96 bg-gray-700 rounded"></div>
+          <div className="h-8 bg-surface-raised rounded w-48 mb-4"></div>
+          <div className="h-12 bg-surface-raised rounded w-64 mb-8"></div>
+          <div className="h-96 bg-surface-raised rounded"></div>
         </div>
       </div>
     )
@@ -90,7 +90,7 @@ const StockDetail = () => {
   if (!quote) {
     return (
       <div className="p-6">
-        <div className="text-center text-gray-400">
+        <div className="text-center text-text-muted">
           Failed to load stock data
         </div>
       </div>
@@ -104,7 +104,7 @@ const StockDetail = () => {
         <div className="flex items-start justify-between mb-4">
           <div>
             <h1 className="text-4xl font-bold text-text mb-2">{upperSymbol}</h1>
-            {profile && <p className="text-xl text-gray-400">{profile.name}</p>}
+            {profile && <p className="text-xl text-text-muted">{profile.name}</p>}
           </div>
           <Button
             variant={inWatchlist ? 'secondary' : 'outline'}
@@ -166,7 +166,7 @@ const StockDetail = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-text-muted">Change</span>
-                <span className={`font-semibold ${quote.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`font-semibold ${quote.change >= 0 ? 'text-gain' : 'text-loss'}`}>
                   {formatCurrency(quote.change)} ({formatPercentage(quote.changePercent)})
                 </span>
               </div>
@@ -201,7 +201,7 @@ const StockDetail = () => {
                     href={article.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="block border border-border hover:border-gray-500 rounded-lg p-4 transition-colors"
+                    className="block border border-border hover:border-border/60 rounded-lg p-4 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <h3 className="text-sm font-semibold text-text">{article.headline}</h3>
@@ -241,16 +241,16 @@ const StockDetail = () => {
             <h2 className="text-xl font-semibold text-text mb-4">Price Alerts</h2>
             
             {permissionStatus === 'denied' && (
-              <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700 rounded-lg">
-                <p className="text-sm text-yellow-400">
+              <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <p className="text-sm text-yellow-700 dark:text-yellow-400">
                   Browser notifications are blocked. Enable them in your browser settings to receive alerts.
                 </p>
               </div>
             )}
             
             {permissionStatus === 'default' && (
-              <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700 rounded-lg">
-                <p className="text-sm text-blue-400 mb-2">
+              <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p className="text-sm text-blue-700 dark:text-blue-400 mb-2">
                   Enable notifications to get alerted when price targets are reached.
                 </p>
                 <Button variant="primary" size="sm" onClick={requestPermission}>

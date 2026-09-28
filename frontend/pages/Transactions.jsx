@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { usePortfolio } from '../context/PortfolioContext'
 import { formatCurrency, formatNumber } from '../utils/calculations'
+import Badge from '../components/atoms/Badge'
 
 const Transactions = () => {
   const navigate = useNavigate()
@@ -66,13 +67,9 @@ const Transactions = () => {
                       {date}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        isBuy 
-                          ? 'bg-green-900 text-green-200' 
-                          : 'bg-red-900 text-red-200'
-                      }`}>
+                      <Badge variant={isBuy ? 'gain' : 'loss'} size="sm">
                         {transactionType || transaction.type}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-accent">
@@ -112,13 +109,9 @@ const Transactions = () => {
                   <div className="text-lg font-semibold text-accent">
                     {transaction.symbol}
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    isBuy 
-                      ? 'bg-green-900 text-green-200' 
-                      : 'bg-red-900 text-red-200'
-                  }`}>
+                  <Badge variant={isBuy ? 'gain' : 'loss'} size="sm">
                     {transactionType || transaction.type}
-                  </span>
+                  </Badge>
                 </div>
                 <div className="text-xs text-text-muted mb-3">
                   {date}
