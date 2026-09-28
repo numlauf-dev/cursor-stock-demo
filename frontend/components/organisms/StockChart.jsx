@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useStockHistory } from '../../hooks/useStockData'
-import { useTheme } from '../../hooks/useTheme'
 import Button from '../atoms/Button'
 import { formatCurrency } from '../../utils/calculations'
 
@@ -62,7 +61,22 @@ const formatTooltipLabel = (dateValue, period) => {
 const StockChart = ({ symbol }) => {
   const [selectedRange, setSelectedRange] = useState('1m')
   const { history, loading, error, refresh } = useStockHistory(symbol, selectedRange)
-  const { theme } = useTheme()
+  
+  // Track theme by observing the 'dark' class on document root
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
+  
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'))
+    })
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    })
+    
+    return () => observer.disconnect()
+  }, [])
 
   const chartData = useMemo(() => {
     return history
@@ -164,8 +178,7 @@ const StockChart = ({ symbol }) => {
   const lastPrice = chartData[chartData.length - 1]?.close || 0
   const isPositive = lastPrice >= firstPrice
   
-  // Theme-aware colors using #34 tokens
-  const isDark = theme === 'dark'
+  // Theme-aware colors using #34 tokens - observes dark class on root
   const lineColor = isPositive 
     ? (isDark ? 'rgb(34 197 94)' : 'rgb(22 163 74)')  // gain token
     : (isDark ? 'rgb(248 113 113)' : 'rgb(239 68 68)') // loss token
@@ -201,7 +214,7 @@ const StockChart = ({ symbol }) => {
 
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={true} vertical={false} />
           <XAxis
             dataKey="label"
             stroke={axisColor}
