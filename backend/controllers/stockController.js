@@ -89,3 +89,47 @@ export const getTrendingStocks = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getMarketNews = async (req, res, next) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : 5;
+    const news = await stockService.getMarketNews({ limit });
+
+    res.status(200).json({
+      success: true,
+      data: { news },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMarketStatus = async (req, res, next) => {
+  try {
+    const status = stockService.getMarketStatus();
+
+    res.status(200).json({
+      success: true,
+      data: status,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getProviderInfo = async (req, res, next) => {
+  try {
+    const config = stockService.resolveStockApiConfig();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        provider: config.provider,
+        hasApiKey: Boolean(config.apiKey),
+        isLiveMode: config.provider !== 'mock',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

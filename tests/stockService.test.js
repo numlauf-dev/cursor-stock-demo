@@ -170,21 +170,28 @@ describe('stockService Finnhub adapters', () => {
     ]);
   });
 
-  it('falls back to mock history when Finnhub candles are unavailable', async () => {
-    axiosGetMock.mockResolvedValue({
+  it('generates synthetic history anchored to live quote when Finnhub is used', async () => {
+    // First call is for getStockQuote (to anchor the synthetic history)
+    axiosGetMock.mockResolvedValueOnce({
       data: {
-        s: 'no_data',
+        c: 181.23,
+        h: 184.5,
+        l: 179.1,
+        o: 180.0,
+        pc: 178.5,
+        d: 2.73,
+        dp: 1.53,
       },
     });
 
     const history = await getStockHistory('AAPL', '1m');
 
-    expect(axiosGetMock).toHaveBeenCalledWith('https://finnhub.io/api/v1/stock/candle', {
-      params: expect.objectContaining({
+    // Should call quote endpoint first to get live data for anchoring
+    expect(axiosGetMock).toHaveBeenCalledWith('https://finnhub.io/api/v1/quote', {
+      params: {
         symbol: 'AAPL',
-        resolution: 'D',
         token: 'real-finnhub-key',
-      }),
+      },
       timeout: 10000,
     });
     expect(Array.isArray(history)).toBe(true);
@@ -196,6 +203,8 @@ describe('stockService Finnhub adapters', () => {
       close: expect.any(Number),
       volume: expect.any(Number),
     });
+    // Last point should end at previousClose from the live quote
+    expect(history[history.length - 1].close).toBe(178.5);
     expect(new Date(history[0].date).getTime()).toBeLessThan(new Date(history[history.length - 1].date).getTime());
   });
 
