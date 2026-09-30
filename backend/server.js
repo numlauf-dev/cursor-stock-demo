@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import logger from './utils/logger.js';
 import { connectRedis, disconnectRedis } from './config/redis.js';
+import { resolveStockApiConfig } from './services/stockService.js';
 import app from './app.js';
 
 // Load environment variables
@@ -22,6 +23,16 @@ const startServer = async () => {
       logger.info(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
       logger.info(`Health check available at http://localhost:${PORT}/health`);
       logger.info(`API available at http://localhost:${PORT}/api/v1`);
+      
+      // Log stock data provider configuration
+      const stockConfig = resolveStockApiConfig();
+      if (stockConfig.provider === 'finnhub') {
+        logger.info(`Stock data: Using live Finnhub API (free tier: 60 req/min)`);
+      } else if (stockConfig.provider === 'alphavantage') {
+        logger.info(`Stock data: Using Alpha Vantage API`);
+      } else {
+        logger.info(`Stock data: Using mock/demo data (set FINNHUB_API_KEY for live data)`);
+      }
     });
   } catch (error) {
     logger.error('Failed to start server:', error);

@@ -7,6 +7,7 @@ import WatchlistHighlights from '../components/organisms/WatchlistHighlights'
 import WatchlistNewsPanel from '../components/organisms/WatchlistNewsPanel'
 import PortfolioCommentary from '../components/organisms/PortfolioCommentary'
 import Button from '../components/atoms/Button'
+import MarketStatusBadge from '../components/atoms/MarketStatusBadge'
 
 const Dashboard = () => {
   const { resetPortfolio, holdings } = usePortfolio()
@@ -26,7 +27,10 @@ const Dashboard = () => {
     <div className="p-6 max-w-[1400px] mx-auto">
       <div className="flex justify-between items-start mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-text mb-1">Portfolio</h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold text-text">Portfolio</h1>
+            <MarketStatusBadge />
+          </div>
           <p className="text-text-muted text-xs">Last updated: {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
         </div>
         <Button variant="ghost" size="sm" onClick={handleReset}>

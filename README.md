@@ -62,16 +62,28 @@ The frontend will start at `http://localhost:5173`
 
 7. Open your browser to `http://localhost:5173`
 
-### Optional: Real Stock Data
+### Optional: Real Stock Data with Finnhub
 
-To use real stock prices instead of mock data:
-- Sign up for a free API key at [Finnhub](https://finnhub.io)
-- Edit `.env` and replace `demo` with your real API keys:
-```
-FINNHUB_API_KEY=your_real_api_key_here
-VITE_FINNHUB_API_KEY=your_real_api_key_here
-```
-- Restart both servers
+The app works out of the box with mock data. To use **live stock prices** from Finnhub:
+
+1. Sign up for a free API key at [Finnhub](https://finnhub.io) (free tier: 60 requests/minute)
+2. Edit `.env` and replace `demo` with your real API key:
+   ```
+   FINNHUB_API_KEY=your_real_api_key_here
+   VITE_FINNHUB_API_KEY=your_real_api_key_here
+   ```
+3. Restart both the backend and frontend servers
+4. Verify live mode is active:
+   - Check the backend startup logs for: `Stock data: Using live Finnhub API`
+   - Look for a green "Live" indicator next to the Portfolio title
+   - Visit `http://localhost:3000/api/v1/stocks/provider` to check provider status
+
+**What works in live mode:**
+- Real-time stock quotes (cached 15-30 seconds)
+- Live company news from the last 7 days
+- Synthetic price charts anchored to live data (Finnhub free tier has no historical candles)
+- Market open/closed status indicator
+- Graceful fallback to mock data on errors or rate limits
 
 ## 🎮 Usage
 
@@ -121,7 +133,19 @@ The app uses the Finnhub API for stock data:
   - Historical price data
   - Stock symbol search
 
-If no real provider key is provided, the app will fall back to mock data for demonstration purposes. The backend stock service prefers Finnhub when `FINNHUB_API_KEY` or `VITE_FINNHUB_API_KEY` is set, can still be forced to Alpha Vantage with `STOCK_API_PROVIDER=alphavantage`, and gracefully falls back to mock history when Finnhub candle data is unavailable on the free tier.
+**Provider Priority:**
+- If no API key is set, the app uses mock/demo data (works offline)
+- When `FINNHUB_API_KEY` is set and valid, Finnhub is used automatically
+- Alpha Vantage can be forced with `STOCK_API_PROVIDER=alphavantage`
+- Mock mode can be forced with `STOCK_API_PROVIDER=mock` (useful for testing)
+
+**Live Data Features:**
+- Quotes are cached 15-30 seconds to stay well under the 60 req/min limit
+- News and profiles are cached 10+ minutes
+- Charts use synthetic history anchored to real current prices and previous close
+- All requests are deduplicated to avoid redundant API calls
+- On rate limits (HTTP 429), the app serves the last good cached value
+- News falls back silently to mock data on errors (dashboard never shows "Unable to sync news")
 
 ## 🎨 Key Features Explained
 

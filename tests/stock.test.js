@@ -291,8 +291,10 @@ describe('Stock API', () => {
         .get('/api/v1/stocks/ERRT/news')
         .query({ limit: 1 });
 
-      expect(response.status).toBe(500);
-      expect(response.body.success).toBe(false);
+      // With new resilient error handling, we fall back to mock news instead of returning 500
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data.news)).toBe(true);
 
       process.env.STOCK_NEWS_PROVIDER = 'mock';
     });
