@@ -1,5 +1,5 @@
 import prisma from '../config/database.js';
-import { ValidationError } from '../utils/errors.js';
+import { NotFoundError, ValidationError } from '../utils/errors.js';
 
 const INITIAL_CASH = 100000;
 const PORTFOLIO_TRANSACTION_TYPES = new Set(['BUY', 'SELL']);
@@ -61,6 +61,31 @@ export const getOrCreatePortfolio = async (userId) => {
  */
 export const getUserPortfolio = async (userId) => {
   return getOrCreatePortfolio(userId);
+};
+
+/**
+ * Get a single transaction alongside the current cash balance, for the
+ * transaction detail drawer
+ */
+export const getTransactionDetail = async (userId, transactionId) => {
+  if (!transactionId || typeof transactionId !== 'string') {
+    throw new ValidationError('Transaction id is required');
+  }
+
+  const portfolio = await getOrCreatePortfolio(userId);
+
+  const transaction = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+  });
+
+  if (!transaction) {
+    throw new NotFoundError('Transaction');
+  }
+
+  return {
+    transaction,
+    cashBalance: portfolio.cash,
+  };
 };
 
 /**
