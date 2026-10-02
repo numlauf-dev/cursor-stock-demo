@@ -1,5 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { stockApi } from '../services/stockApi'
+import { useMarketAwarePolling, useMarketStatus } from './useMarketAwarePolling'
+
+const getPollingInterval = (isOpen, envVarName, defaultOpen, defaultClosed) => {
+  const envValue = import.meta.env[envVarName]
+  if (envValue !== undefined && envValue !== '') {
+    const parsed = parseInt(envValue, 10)
+    if (!isNaN(parsed)) {
+      return isOpen ? parsed : (defaultClosed || 0)
+    }
+  }
+  return isOpen ? defaultOpen : defaultClosed
+}
 
 const mergeArticlesById = (existingArticles, newArticles) => {
   const seenIds = new Set(existingArticles.map((article) => article.id))
@@ -15,10 +27,11 @@ const mergeArticlesById = (existingArticles, newArticles) => {
   return [...existingArticles, ...dedupedIncoming]
 }
 
-export const useStockQuote = (symbol, refreshInterval = 5000) => {
+export const useStockQuote = (symbol, enablePolling = true) => {
   const [quote, setQuote] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { isMarketOpen } = useMarketStatus()
 
   const fetchQuote = useCallback(async () => {
     if (!symbol) return
@@ -36,12 +49,18 @@ export const useStockQuote = (symbol, refreshInterval = 5000) => {
 
   useEffect(() => {
     fetchQuote()
+  }, [fetchQuote])
 
-    // Set up polling for real-time updates
-    const interval = setInterval(fetchQuote, refreshInterval)
+  const marketOpenInterval = getPollingInterval(true, 'VITE_POLL_INTERVAL_MARKET_OPEN', 15000, 300000)
+  const marketClosedInterval = getPollingInterval(false, 'VITE_POLL_INTERVAL_MARKET_CLOSED', 15000, 300000)
 
-    return () => clearInterval(interval)
-  }, [fetchQuote, refreshInterval])
+  useMarketAwarePolling(
+    fetchQuote,
+    isMarketOpen,
+    marketOpenInterval,
+    marketClosedInterval,
+    enablePolling
+  )
 
   return { quote, loading, error, refresh: fetchQuote }
 }
@@ -225,10 +244,11 @@ export const useStockCandles = (symbol, _resolution = 'D', days = 30) => {
   return { candles: history, history, loading, error, refresh }
 }
 
-export const useMultipleQuotes = (symbols, refreshInterval = 5000) => {
+export const useMultipleQuotes = (symbols, enablePolling = true) => {
   const [quotes, setQuotes] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { isMarketOpen } = useMarketStatus()
 
   const fetchQuotes = useCallback(async () => {
     if (!symbols || symbols.length === 0) {
@@ -279,12 +299,18 @@ export const useMultipleQuotes = (symbols, refreshInterval = 5000) => {
 
   useEffect(() => {
     fetchQuotes()
+  }, [fetchQuotes])
 
-    // Set up polling for real-time updates
-    const interval = setInterval(fetchQuotes, refreshInterval)
+  const marketOpenInterval = getPollingInterval(true, 'VITE_POLL_INTERVAL_MARKET_OPEN', 15000, 300000)
+  const marketClosedInterval = getPollingInterval(false, 'VITE_POLL_INTERVAL_MARKET_CLOSED', 15000, 300000)
 
-    return () => clearInterval(interval)
-  }, [fetchQuotes, refreshInterval])
+  useMarketAwarePolling(
+    fetchQuotes,
+    isMarketOpen,
+    marketOpenInterval,
+    marketClosedInterval,
+    enablePolling
+  )
 
   return { quotes, loading, error, refresh: fetchQuotes }
 }

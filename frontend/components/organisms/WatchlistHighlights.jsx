@@ -1,10 +1,11 @@
 import { useWatchlist } from '../../context/WatchlistContext'
 import { useMultipleQuotes } from '../../hooks/useStockData'
 import { useNavigate } from 'react-router-dom'
-import { formatCurrency, formatPercentage } from '../../utils/calculations'
+import { formatPercentage } from '../../utils/calculations'
 import Card from '../atoms/Card'
 import Badge from '../atoms/Badge'
 import Skeleton from '../atoms/Skeleton'
+import PriceWithFlash from '../atoms/PriceWithFlash'
 
 const WatchlistHighlights = () => {
   const { watchlist } = useWatchlist()
@@ -95,8 +96,8 @@ const WatchlistHighlights = () => {
               </div>
               
               <div className="space-y-2">
-                <div className="text-2xl font-bold text-text tabular-nums">
-                  {formatCurrency(quote.currentPrice)}
+                <div className="text-2xl font-bold tabular-nums">
+                  <PriceWithFlash price={quote.currentPrice} className="text-text" />
                 </div>
                 
                 <Badge 

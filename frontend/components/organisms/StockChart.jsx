@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { useStockHistory } from '../../hooks/useStockData'
+import { useStockHistory, useStockQuote } from '../../hooks/useStockData'
 import Button from '../atoms/Button'
 import { formatCurrency } from '../../utils/calculations'
 
@@ -61,6 +61,7 @@ const formatTooltipLabel = (dateValue, period) => {
 const StockChart = ({ symbol }) => {
   const [selectedRange, setSelectedRange] = useState('1m')
   const { history, loading, error, refresh } = useStockHistory(symbol, selectedRange)
+  const { quote } = useStockQuote(symbol, true)
   
   // Track theme by observing the 'dark' class on document root
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
@@ -79,7 +80,7 @@ const StockChart = ({ symbol }) => {
   }, [])
 
   const chartData = useMemo(() => {
-    return history
+    const baseData = history
       .map((candle) => {
         const timestamp = new Date(candle.date)
         if (Number.isNaN(timestamp.getTime())) {
@@ -98,7 +99,28 @@ const StockChart = ({ symbol }) => {
         }
       })
       .filter(Boolean)
-  }, [history, selectedRange])
+
+    if (baseData.length > 0 && quote?.currentPrice) {
+      const lastPoint = baseData[baseData.length - 1]
+      const now = Date.now()
+      const timeDiff = now - lastPoint.timestamp
+
+      if (selectedRange === '1d' && timeDiff < 24 * 60 * 60 * 1000) {
+        const nowDate = new Date(now)
+        baseData[baseData.length - 1] = {
+          ...lastPoint,
+          close: quote.currentPrice,
+          high: Math.max(lastPoint.high, quote.currentPrice),
+          low: Math.min(lastPoint.low, quote.currentPrice),
+          timestamp: now,
+          label: formatAxisLabel(nowDate, selectedRange),
+          tooltipLabel: formatTooltipLabel(nowDate, selectedRange),
+        }
+      }
+    }
+
+    return baseData
+  }, [history, selectedRange, quote?.currentPrice])
 
   if (loading) {
     return (

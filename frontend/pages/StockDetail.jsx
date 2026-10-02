@@ -4,6 +4,7 @@ import { useStockQuote, useStockProfile, useStockNews } from '../hooks/useStockD
 import { useWatchlist } from '../context/WatchlistContext'
 import { usePriceAlerts } from '../hooks/usePriceAlerts'
 import PriceDisplay from '../components/atoms/PriceDisplay'
+import PriceWithFlash from '../components/atoms/PriceWithFlash'
 import Button from '../components/atoms/Button'
 import TradingPanel from '../components/organisms/TradingPanel'
 import StockChart from '../components/organisms/StockChart'
@@ -154,7 +155,9 @@ const StockDetail = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-text-muted">Current Price</span>
-                <span className="text-text font-semibold text-lg tabular-nums">{formatCurrency(quote.currentPrice)}</span>
+                <span className="text-lg font-semibold tabular-nums">
+                  <PriceWithFlash price={quote.currentPrice} className="text-text" />
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-text-muted">Previous Close</span>
@@ -162,7 +165,9 @@ const StockDetail = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-text-muted">Day's Range</span>
-                <span className="text-text tabular-nums">{formatCurrency(quote.low)} - {formatCurrency(quote.high)}</span>
+                <span className="text-text tabular-nums">
+                  <PriceWithFlash price={quote.low} className="text-text" /> - <PriceWithFlash price={quote.high} className="text-text" />
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-text-muted">Change</span>

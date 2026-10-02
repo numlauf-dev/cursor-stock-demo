@@ -1,6 +1,7 @@
 import { usePortfolio } from '../context/PortfolioContext'
 import { useWatchlist } from '../context/WatchlistContext'
 import { useMultipleQuotes } from '../hooks/useStockData'
+import { useState, useEffect } from 'react'
 import PortfolioSummary from '../components/organisms/PortfolioSummary'
 import HoldingsTable from '../components/organisms/HoldingsTable'
 import WatchlistHighlights from '../components/organisms/WatchlistHighlights'
@@ -12,10 +13,34 @@ import MarketStatusBadge from '../components/atoms/MarketStatusBadge'
 const Dashboard = () => {
   const { resetPortfolio, holdings } = usePortfolio()
   const { watchlist, activeWatchlistId, isReady } = useWatchlist()
+  const [lastUpdate, setLastUpdate] = useState(Date.now())
+  const [updateText, setUpdateText] = useState('Just now')
   
   // Share a single quotes source across all dashboard components
   const symbols = holdings.map(h => h.symbol)
   const { quotes, loading: quotesLoading } = useMultipleQuotes(symbols)
+
+  useEffect(() => {
+    if (!quotesLoading && Object.keys(quotes).length > 0) {
+      setLastUpdate(Date.now())
+    }
+  }, [quotes, quotesLoading])
+
+  useEffect(() => {
+    const updateInterval = setInterval(() => {
+      const secondsAgo = Math.floor((Date.now() - lastUpdate) / 1000)
+      if (secondsAgo < 5) {
+        setUpdateText('Just now')
+      } else if (secondsAgo < 60) {
+        setUpdateText(`${secondsAgo}s ago`)
+      } else {
+        const minutesAgo = Math.floor(secondsAgo / 60)
+        setUpdateText(`${minutesAgo}m ago`)
+      }
+    }, 1000)
+
+    return () => clearInterval(updateInterval)
+  }, [lastUpdate])
 
   const handleReset = async () => {
     if (window.confirm('Are you sure you want to reset your portfolio? This will delete all holdings and transactions and reset your cash to $100,000.')) {
@@ -31,7 +56,7 @@ const Dashboard = () => {
             <h1 className="text-2xl font-bold text-text">Portfolio</h1>
             <MarketStatusBadge />
           </div>
-          <p className="text-text-muted text-xs">Last updated: {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
+          <p className="text-text-muted text-xs">Last updated: {updateText}</p>
         </div>
         <Button variant="ghost" size="sm" onClick={handleReset}>
           Reset

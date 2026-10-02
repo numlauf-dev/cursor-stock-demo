@@ -8,6 +8,7 @@ import {
   calculatePnLPercentage 
 } from '../../utils/calculations'
 import Skeleton from '../atoms/Skeleton'
+import PriceWithFlash from '../atoms/PriceWithFlash'
 
 const HoldingsTable = ({ quotes = {}, quotesLoading = false }) => {
   const navigate = useNavigate()
@@ -123,15 +124,15 @@ const HoldingsTable = ({ quotes = {}, quotesLoading = false }) => {
                   <td className="px-6 py-3.5 whitespace-nowrap text-right text-sm text-text tabular-nums">
                     {formatCurrency(holding.avgPrice)}
                   </td>
-                  <td className="px-6 py-3.5 whitespace-nowrap text-right text-sm text-text tabular-nums">
+                  <td className="px-6 py-3.5 whitespace-nowrap text-right text-sm tabular-nums">
                     {quotesLoading ? (
                       <div className="h-4 w-16 bg-surface-raised rounded animate-pulse ml-auto"></div>
                     ) : (
-                      formatCurrency(currentPrice)
+                      <PriceWithFlash price={currentPrice} className="text-text" />
                     )}
                   </td>
-                  <td className="px-6 py-3.5 whitespace-nowrap text-right text-sm font-semibold text-text tabular-nums">
-                    {formatCurrency(marketValue)}
+                  <td className="px-6 py-3.5 whitespace-nowrap text-right text-sm font-semibold tabular-nums">
+                    <PriceWithFlash price={marketValue} className="text-text" />
                   </td>
                   <td className={`px-6 py-3.5 whitespace-nowrap text-right text-sm font-semibold tabular-nums ${isPositive ? 'text-gain' : 'text-loss'}`}>
                     <div>{formatCurrency(pnl)}</div>
@@ -203,17 +204,19 @@ const HoldingsTable = ({ quotes = {}, quotesLoading = false }) => {
                     </div>
                     <div>
                       <div className="text-text-muted text-xs">Current Price</div>
-                      <div className="text-text font-medium">
+                      <div className="font-medium">
                         {quotesLoading ? (
                           <div className="h-4 w-16 bg-surface-raised rounded animate-pulse"></div>
                         ) : (
-                          formatCurrency(currentPrice)
+                          <PriceWithFlash price={currentPrice} className="text-text" />
                         )}
                       </div>
                     </div>
                     <div>
                       <div className="text-text-muted text-xs">Market Value</div>
-                      <div className="text-text font-semibold">{formatCurrency(marketValue)}</div>
+                      <div className="font-semibold">
+                        <PriceWithFlash price={marketValue} className="text-text" />
+                      </div>
                     </div>
                   </div>
                   <div className="mt-3 pt-3 border-t border-border">
