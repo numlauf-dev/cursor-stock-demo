@@ -1,7 +1,7 @@
 import { useWatchlist } from '../../context/WatchlistContext'
 import { useMultipleQuotes } from '../../hooks/useStockData'
 import { useNavigate } from 'react-router-dom'
-import { formatPercentage } from '../../utils/calculations'
+import { formatCurrency, formatPercentage } from '../../utils/calculations'
 import Card from '../atoms/Card'
 import Badge from '../atoms/Badge'
 import Skeleton from '../atoms/Skeleton'
