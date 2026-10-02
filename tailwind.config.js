@@ -22,6 +22,23 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
       },
+      keyframes: {
+        'flash-up': {
+          '0%': { backgroundColor: 'rgb(var(--color-gain) / 0.2)' },
+          '100%': { backgroundColor: 'transparent' },
+        },
+        'flash-down': {
+          '0%': { backgroundColor: 'rgb(var(--color-loss) / 0.2)' },
+          '100%': { backgroundColor: 'transparent' },
+        },
+      },
+      animation: {
+        'flash-up': 'flash-up 800ms ease-out',
+        'flash-down': 'flash-down 800ms ease-out',
+      },
+      transitionDuration: {
+        '800': '800ms',
+      },
     },
   },
   plugins: [],

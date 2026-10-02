@@ -5,7 +5,12 @@ A full-featured React-based stock trading simulator that allows users to practic
 ## 🚀 Features
 
 - **Virtual Trading**: Start with $100,000 virtual cash and practice trading stocks
-- **Real-time Updates**: Stock prices update every 5 seconds for active stocks
+- **Real-time Updates**: Stock prices update live during market hours with visual flash indicators
+- **Live Price Ticking**: Prices visibly "tick" every 15 seconds (configurable) when markets are open
+  - Green flash for price increases, red for decreases
+  - Respects `prefers-reduced-motion` accessibility setting
+  - Pauses when browser tab is hidden to save resources
+  - Works in demo mode without API keys
 - **Interactive Charts**: View price charts with multiple timeframes (1D, 1W, 1M, 3M, 1Y)
 - **Portfolio Dashboard**: Track your holdings, P&L, and overall performance
 - **Watchlist**: Add stocks to your watchlist for quick access and monitoring
@@ -141,11 +146,19 @@ The app uses the Finnhub API for stock data:
 
 **Live Data Features:**
 - Quotes are cached 15-30 seconds to stay well under the 60 req/min limit
+- Live price ticking: prices flash green/red when they change (configurable polling interval)
+- Polling adapts to market hours: faster during open hours, slower when closed
+- Browser tab visibility detection pauses polling when tab is hidden
 - News and profiles are cached 10+ minutes
 - Charts use synthetic history anchored to real current prices and previous close
 - All requests are deduplicated to avoid redundant API calls
 - On rate limits (HTTP 429), the app serves the last good cached value
 - News falls back silently to mock data on errors (dashboard never shows "Unable to sync news")
+
+**Demo Mode Features:**
+- Simulated price ticking without an API key (deterministic random walk)
+- All ticking behavior works identically in mock and live modes
+- Set `VITE_DEMO_TICKS=false` to disable simulated ticking
 
 ## 🎨 Key Features Explained
 

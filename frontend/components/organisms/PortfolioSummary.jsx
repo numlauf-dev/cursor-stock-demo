@@ -8,6 +8,7 @@ import {
 import Card from '../atoms/Card'
 import Badge from '../atoms/Badge'
 import Skeleton from '../atoms/Skeleton'
+import PriceWithFlash from '../atoms/PriceWithFlash'
 
 const PortfolioSummary = ({ quotes = {}, quotesLoading = false }) => {
   const { cash, holdings } = usePortfolio()
@@ -54,8 +55,8 @@ const PortfolioSummary = ({ quotes = {}, quotesLoading = false }) => {
           <div className="flex-1">
             <div className="text-text-muted text-xs uppercase tracking-wide mb-2">Total Portfolio Value</div>
             <div className="flex items-baseline gap-3 mb-3">
-              <div className="text-text text-5xl font-bold tracking-tight tabular-nums">
-                {formatCurrency(totalValue)}
+              <div className="text-5xl font-bold tracking-tight tabular-nums">
+                <PriceWithFlash price={totalValue} className="text-text" />
               </div>
               <Badge 
                 variant={isZero ? 'muted' : isPositive ? 'gain' : 'loss'} 
